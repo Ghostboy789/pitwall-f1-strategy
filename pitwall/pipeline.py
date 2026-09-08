@@ -110,6 +110,11 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
     if save:
         tp.to_parquet(config.MODELS_OUT / "track_position_value.parquet", index=False)
 
+    if save:
+        build_circuit_reference(laps).to_parquet(
+            config.MODELS_OUT / "circuit_reference.parquet", index=False
+        )
+
     metrics = {
         "n_races": int(laps["race_id"].nunique()),
         "n_races_used_for_strategy": len(keep),
@@ -182,8 +187,8 @@ def circuit_params(
     pass_base = float(trow["p_pass_per_lap"].iloc[0]) if len(trow) else 0.08
 
     if race_laps is None:
-        rl = a["laps"].loc[a["laps"]["circuit"] == circuit, "race_laps"]
-        race_laps = int(rl.median()) if len(rl) else 55
+        rl = a.get("race_laps_by_circuit", {}).get(circuit)
+        race_laps = int(rl) if rl is not None and pd.notna(rl) else 55
 
     base_lap = 90.0
     if "median_lap_s" in a and circuit in a["median_lap_s"]:
@@ -202,22 +207,37 @@ def circuit_params(
     )
 
 
-def load_artifacts() -> dict:
-    """Read every persisted artefact back from disk."""
-    m = config.MODELS_OUT
-    # `dataset.build` persists laps before compound ranking is applied, so the
-    # rank is recomputed here rather than stored twice and allowed to drift.
-    laps = compounds.add_relative_hardness(pd.read_parquet(config.PROCESSED / "laps_all.parquet"))
-    med = (
-        laps.assign(_t=pd.to_numeric(laps["LapTime"], errors="coerce"))
-        .query("is_green")
-        .groupby("circuit")["_t"]
-        .median()
-        .to_dict()
+def build_circuit_reference(laps: pd.DataFrame) -> pd.DataFrame:
+    """Per-circuit summary: the only thing the app needs from the lap table.
+
+    ``laps_all.parquet`` is 12.7 MB and the deployed app reads exactly three
+    numbers out of it per circuit. Persisting this summary instead lets the
+    container ship ~100 KB of artefacts rather than 25 MB of lap data, and
+    removes a gitignored file from the Docker build's critical path.
+    """
+    d = laps.assign(_t=pd.to_numeric(laps["LapTime"], errors="coerce"))
+    green = d[d["is_green"]]
+    return (
+        pd.DataFrame(
+            {
+                "median_lap_s": green.groupby("circuit")["_t"].median(),
+                "race_laps": d.groupby("circuit")["race_laps"].median(),
+                "n_races": d.groupby("circuit")["race_id"].nunique(),
+            }
+        )
+        .reset_index()
+        .dropna(subset=["median_lap_s"])
     )
-    return {
-        "laps": laps,
-        "median_lap_s": med,
+
+
+def load_artifacts() -> dict:
+    """Read every persisted artefact back from disk.
+
+    The full lap table is loaded only if it is present. A deployed container
+    has the compact circuit reference instead, which is all the app reads.
+    """
+    m = config.MODELS_OUT
+    out: dict = {
         "degradation_table": pd.read_parquet(m / "degradation_naive_vs_ipcw.parquet"),
         "pit_loss": pd.read_parquet(m / "pit_loss.parquet"),
         "hazard": pd.read_parquet(m / "caution_hazard.parquet"),
@@ -226,6 +246,27 @@ def load_artifacts() -> dict:
         "circuit_pass_effects": pd.read_parquet(m / "circuit_pass_effects.parquet"),
         "metrics": json.loads((m / "metrics.json").read_text()),
     }
+
+    ref_path = m / "circuit_reference.parquet"
+    laps_path = config.PROCESSED / "laps_all.parquet"
+
+    if laps_path.exists():
+        # `dataset.build` persists laps before compound ranking is applied, so
+        # the rank is recomputed here rather than stored twice and left to drift.
+        laps = compounds.add_relative_hardness(pd.read_parquet(laps_path))
+        out["laps"] = laps
+        ref = build_circuit_reference(laps)
+    elif ref_path.exists():
+        ref = pd.read_parquet(ref_path)
+    else:
+        raise FileNotFoundError(
+            f"neither {laps_path} nor {ref_path} exists; run `python -m pitwall.pipeline`"
+        )
+
+    out["circuit_reference"] = ref
+    out["median_lap_s"] = dict(zip(ref["circuit"], ref["median_lap_s"]))
+    out["race_laps_by_circuit"] = dict(zip(ref["circuit"], ref["race_laps"]))
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:

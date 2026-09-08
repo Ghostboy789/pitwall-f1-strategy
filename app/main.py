@@ -126,7 +126,7 @@ def load_state() -> None:
         g = json.loads(gate_path.read_text())
         STATE["gate"] = g if g.get("status") == "ok" else None
 
-    STATE["circuits"] = sorted(set(tp["circuit"]) & set(art["laps"]["circuit"].unique()))
+    STATE["circuits"] = sorted(set(tp["circuit"]) & set(art["circuit_reference"]["circuit"]))
     log.info(
         "loaded artefacts: %d circuits, reliability=%d bins, gate=%s",
         len(STATE["circuits"]),

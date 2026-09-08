@@ -29,7 +29,7 @@ trips, the diagnosis goes in the README as a headline finding.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import pandas as pd
@@ -59,13 +59,34 @@ class AuditConfig:
     seed: int = config.SEED
 
 
+# No dry F1 race is won on more stops than this. A reconstruction claiming
+# more has misread the data, and a car-race that trips it is dropped rather
+# than audited against a strategy nobody ran.
+MAX_PLAUSIBLE_STOPS = 4
+
+
 def reconstruct_strategies(laps: pd.DataFrame, race_id: str) -> pd.DataFrame:
     """What each car actually did: stop laps and the compound rank fitted.
 
-    Only cars that reached the finish are audited. A car that retired on lap
-    12 has a truncated strategy, and 'what would a better strategy have done'
-    is unanswerable for it - the answer is dominated by the retirement, not by
-    the tyres.
+    A stop is an **in-lap** - a lap on which the car entered the pit lane. That
+    is the authoritative signal and it is the only one used here.
+
+    An earlier version inferred stops from ``Stint`` boundaries instead, taking
+    every increment of the stint counter as a pit stop. FastF1 increments that
+    counter for reasons other than a stop, so the reconstruction invented
+    strategies no team ran: stops on laps 2 *and* 3, three stops on consecutive
+    laps 35/36/37, a lap-1 stop refitting the compound already on the car.
+
+    That was not a cosmetic error. The simulator charges full pit loss per
+    stop, so a car credited with five phantom stops paid ~110 s that its real
+    race never spent, and the optimiser "beat" it by exactly that margin. It is
+    what failed the sanity gate: mean claimed gain rose monotonically with the
+    number of reconstructed stops (1 stop 10.9 s, 4 stops 69.6 s), which is the
+    signature of an artefact rather than of a strategic insight.
+
+    Only cars that reached the finish are audited. A car that retired on lap 12
+    has a truncated strategy, and 'what would a better strategy have done' is
+    unanswerable for it - the answer is dominated by the retirement.
     """
     r = laps[laps["race_id"] == race_id]
     if r.empty:
@@ -74,26 +95,41 @@ def reconstruct_strategies(laps: pd.DataFrame, race_id: str) -> pd.DataFrame:
 
     rows = []
     for car_id, g in r.groupby("car_id"):
-        g = g.sort_values("LapNumber")
+        g = g.sort_values("LapNumber").reset_index(drop=True)
         completed = int(pd.to_numeric(g["LapNumber"], errors="coerce").max())
-        stints = (
-            g.groupby("Stint")
-            .agg(
-                start_lap=("LapNumber", "min"),
-                rank=("compound_rank", "first"),
-                label=("compound_rank_label", "first"),
-            )
-            .reset_index()
-            .sort_values("Stint")
-            .dropna(subset=["rank"])
-        )
-        if len(stints) == 0:
+
+        start_rank = g["compound_rank"].dropna()
+        if start_rank.empty:
             continue
-        stops = tuple(
-            (int(row.start_lap) - 1, int(row["rank"]))
-            for _, row in stints.iloc[1:].iterrows()
-            if int(row.start_lap) - 1 > 0
+
+        # Every lap the car actually entered the pit lane.
+        in_laps = sorted(
+            int(x) for x in g.loc[g["is_inlap"].fillna(False), "LapNumber"].dropna().unique()
         )
+
+        stops: list[tuple[int, int]] = []
+        prev_in_lap: int | None = None
+        for lap in in_laps:
+            # A run of in-laps on consecutive laps is one timing artefact, not
+            # several stops. Compare against the previous in-lap SEEN, not the
+            # last one accepted -- otherwise 35/36/37 drops 36 and then keeps
+            # 37, because 37 is two laps from the accepted 35.
+            gap_from_prev = None if prev_in_lap is None else lap - prev_in_lap
+            prev_in_lap = lap
+            if gap_from_prev is not None and gap_from_prev <= 1:
+                continue
+            if lap <= 0 or lap >= race_laps:
+                continue  # a stop on the final lap changes nothing
+            # The compound fitted is whatever the car ran on the following lap.
+            after = g[g["LapNumber"] > lap]["compound_rank"].dropna()
+            if after.empty:
+                continue
+            stops.append((lap, int(after.iloc[0])))
+
+        if len(stops) > MAX_PLAUSIBLE_STOPS:
+            log.debug("%s %s: %d stops reconstructed, dropping", race_id, car_id, len(stops))
+            continue
+
         rows.append(
             {
                 "race_id": race_id,
@@ -104,7 +140,7 @@ def reconstruct_strategies(laps: pd.DataFrame, race_id: str) -> pd.DataFrame:
                 "race_laps": race_laps,
                 "finished_share": completed / race_laps if race_laps else 0.0,
                 "n_stops": len(stops),
-                "strategy": Strategy(stops=stops, start_rank=int(stints.iloc[0]["rank"])),
+                "strategy": Strategy(stops=tuple(stops), start_rank=int(start_rank.iloc[0])),
             }
         )
     return pd.DataFrame(rows)
@@ -198,6 +234,14 @@ def audit_race(
     strategies = reconstruct_strategies(laps, race_id)
     if strategies.empty:
         return pd.DataFrame()
+
+    # Use THIS race's distance, not the circuit's median. The actual strategy
+    # is reconstructed from this race, so simulating it over a different number
+    # of laps compares a real plan against a race that never happened - and a
+    # shortened race would silently drop stops that fall beyond its end.
+    race_laps = int(strategies["race_laps"].iloc[0])
+    if race_laps >= 10 and race_laps != params.race_laps:
+        params = replace(params, race_laps=race_laps)
 
     field = build_field(laps, race_id, strategies)
     if len(field) < 4:

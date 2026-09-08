@@ -1,10 +1,14 @@
-# Data & caches — never commit
+# Data & caches - never commit. `data/raw` is ~26 MB of ingested parquet and
+# `data/processed` ~25 MB of derived tables; both rebuild from the pipeline.
 data/
 cache/
 fastf1_cache/
-*.parquet
 *.feather
 *.ff1pkl
+
+# ...except the fitted artefacts the deployed app reads (~100 KB total).
+!models_out/
+!models_out/**
 
 # Python
 .venv/
@@ -16,8 +20,9 @@ __pycache__/
 .ruff_cache/
 .ipynb_checkpoints/
 
-# Model artefacts (regenerable)
-models_out/
+# Model artefacts. These are regenerable with `python -m pitwall.pipeline`,
+# but the small ones are committed so a clone can run the app -- and so the
+# Docker build does not depend on a gitignored directory.
 *.joblib
 *.pkl
 

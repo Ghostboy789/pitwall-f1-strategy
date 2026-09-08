@@ -15,9 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY pitwall/ ./pitwall/
 COPY app/ ./app/
 # Fitted artefacts are committed for deployment: the container serves a model,
-# it does not refit one. Rebuild them with `python -m pitwall.pipeline`.
+# it does not refit one. ~100 KB, including circuit_reference.parquet, which
+# stands in for the 12.7 MB lap table the app would otherwise need.
 COPY models_out/ ./models_out/
-COPY data/processed/ ./data/processed/
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \

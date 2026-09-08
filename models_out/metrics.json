@@ -1,0 +1,19 @@
+{
+  "n_races": 185,
+  "n_races_used_for_strategy": 162,
+  "n_laps_raw": 203644,
+  "n_laps_modelled": 149432,
+  "n_circuits": 32,
+  "n_drivers": 44,
+  "n_teams": 21,
+  "n_stints": 10421,
+  "share_stints_censored": 0.3617695038863833,
+  "n_opportunities": 64646,
+  "n_passes": 4977,
+  "overtaking_auc": 0.9146205871339248,
+  "overtaking_brier": 0.048715228333275476,
+  "overtaking_ece": 0.002488619216906983,
+  "gates_passed": 8,
+  "gates_total": 8,
+  "seconds_elapsed": 1093.7
+}
