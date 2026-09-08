@@ -29,17 +29,57 @@ log = logging.getLogger("pitwall.ingest")
 # Sub-directories of data/raw, one table per kind.
 KINDS = ("laps", "weather", "track_status", "results", "race_control")
 
-# Be polite to the Ergast mirror FastF1 falls back on for first-lap times.
+# Be polite to the Ergast mirror. Its documented ceiling is 500 calls/hour and
+# FastF1 spends one per race session on driver info and classification.
 SLEEP_BETWEEN_SESSIONS_S = 1.0
 MAX_ATTEMPTS = 3
 
+# Rate limiting is not a failure, it is backpressure. Retrying immediately
+# spends more of the budget and makes it worse, which is exactly what an
+# earlier version of this loop did: it burned three attempts per session and
+# turned one exhausted budget into 32 consecutive dead sessions.
+RATE_LIMIT_SLEEP_S = 360.0
+MAX_RATE_LIMIT_WAITS = 12
+
+
+def _is_rate_limit(exc: BaseException) -> bool:
+    """True for the Ergast mirror's rate-limit error, by name not import.
+
+    FastF1 has moved this exception between modules across versions; matching
+    on the name survives that without pinning an import path.
+    """
+    return "RateLimitExceeded" in type(exc).__name__ or "500 calls/h" in str(exc)
+
 
 def setup_fastf1() -> None:
-    """Point FastF1 at the project cache and quieten its logger."""
+    """Point FastF1 at the project cache, quieten it, and drop one API call.
+
+    FastF1 makes two Ergast-mirror calls per race session: one for driver
+    info and classification (needed here - grid position feeds the overtaking
+    model), and one purely to backfill the first lap's time, which the F1
+    timing API does not provide.
+
+    The mirror (api.jolpi.ca, the Ergast successor) allows 500 calls/hour.
+    Ingesting 186 races hit that ceiling partway through 2020 and failed 32
+    consecutive sessions. Halving the calls per session is the difference
+    between finishing inside the budget and not.
+
+    The first-lap call is disabled because this project cannot use its result:
+    pre-registered filter L4 discards lap 1 of every race outright, since a
+    standing start is not representative pace. Nothing is lost.
+    """
     import fastf1
+    import fastf1.core
 
     fastf1.Cache.enable_cache(str(config.CACHE))
     fastf1.set_log_level("ERROR")
+
+    if not getattr(fastf1.core.Session, "_pitwall_first_lap_patched", False):
+        fastf1.core.Session._add_first_lap_time_from_ergast = (
+            lambda self: None  # noqa: ARG005
+        )
+        fastf1.core.Session._pitwall_first_lap_patched = True
+        log.info("disabled FastF1's first-lap Ergast lookup (lap 1 is filtered out anyway)")
 
 
 def timedeltas_to_seconds(df: pd.DataFrame) -> pd.DataFrame:
@@ -150,7 +190,10 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
         return rec
 
     last_exc = ""
-    for attempt in range(1, MAX_ATTEMPTS + 1):
+    attempt = 0
+    rate_limit_waits = 0
+    while attempt < MAX_ATTEMPTS:
+        attempt += 1
         rec.attempts = attempt
         try:
             ses = fastf1.get_session(rec.year, rec.round, "R")
@@ -218,6 +261,24 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
 
         except Exception as exc:  # noqa: BLE001
             last_exc = f"{type(exc).__name__}: {exc}"
+
+            if _is_rate_limit(exc):
+                # Backpressure, not failure. Give the hourly window time to
+                # roll and try again without spending an attempt.
+                attempt -= 1
+                rate_limit_waits += 1
+                if rate_limit_waits > MAX_RATE_LIMIT_WAITS:
+                    rec.status = "rate_limited"
+                    rec.error = last_exc[:400]
+                    return rec
+                log.warning(
+                    "rate limited on %s r%s; waiting %.0fs (wait %d/%d)",
+                    rec.year, rec.round, RATE_LIMIT_SLEEP_S,
+                    rate_limit_waits, MAX_RATE_LIMIT_WAITS,
+                )
+                time.sleep(RATE_LIMIT_SLEEP_S)
+                continue
+
             log.warning(
                 "attempt %s/%s failed for %s r%s %s: %s",
                 attempt, MAX_ATTEMPTS, rec.year, rec.round, rec.event_name, last_exc,
@@ -230,11 +291,34 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
     return rec
 
 
+TRANSIENT_MARKERS = ("RateLimitExceeded", "500 calls/h", "ConnectionError", "Timeout", "SSLError")
+
+
+def _is_transient_record(rec: dict) -> bool:
+    """True if a manifest row failed for a reason worth retrying.
+
+    A rate-limited or network-dropped session is not the same thing as the
+    2018 Italian Grand Prix, whose timing data does not exist in the source
+    archive at all. Only the former is re-attempted; the latter is a permanent
+    finding and stays in the manifest as one.
+    """
+    if str(rec.get("status")) not in ("failed", "rate_limited"):
+        return False
+    err = str(rec.get("error", ""))
+    return any(m in err for m in TRANSIENT_MARKERS)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Ingest F1 race sessions into parquet.")
     ap.add_argument("--seasons", type=int, nargs="*", default=list(config.SEASONS))
     ap.add_argument("--force", action="store_true", help="re-download sessions already on disk")
     ap.add_argument("--limit", type=int, default=0, help="stop after N sessions (smoke test)")
+    ap.add_argument(
+        "--retry-transient",
+        action="store_true",
+        help="re-attempt sessions that failed for a transient reason (rate limiting, "
+        "network) while leaving genuine source-archive holes alone",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -252,6 +336,12 @@ def main(argv: list[str] | None = None) -> int:
     records: list[dict] = []
     if manifest_path.exists() and not args.force:
         records = pd.read_csv(manifest_path).fillna("").to_dict("records")
+
+    if args.retry_transient:
+        before = len(records)
+        records = [r for r in records if not _is_transient_record(r)]
+        log.info("dropping %d transient failures for re-attempt", before - len(records))
+
     done = {
         (int(r["year"]), int(r["round"]))
         for r in records
