@@ -80,3 +80,36 @@ def test_shortlist_is_ordered_by_cost():
     best = diverse_candidates(enumerate_strategies(_params(), max_stops=2), 8)
     costs = [c.deterministic_cost_s for c in best]
     assert costs == sorted(costs)
+
+
+def test_stint_longer_than_the_observed_ceiling_is_rejected():
+    """The feasibility constraint the sanity gate forced.
+
+    A linear degradation model cannot see the tyre cliff, so without a ceiling
+    the optimiser proposes stints no team has ever run and "beats" reality by
+    the difference.
+    """
+    caps = {0: 20, 1: 30, 2: 40}
+    ok, _ = deterministic_cost((25,), (1, 0), 45, {0: 0.1, 1: 0.06}, 22.0, caps)
+    assert np.isfinite(ok), "a 25/20 split is inside the caps and should be allowed"
+
+    bad, lengths = deterministic_cost((44,), (1, 0), 60, {0: 0.1, 1: 0.06}, 22.0, caps)
+    assert lengths[0] == 44 > caps[1]
+    assert not np.isfinite(bad), "a stint beyond the observed ceiling must be rejected"
+
+
+def test_no_ceiling_means_no_constraint():
+    """Absent limits the cost is unchanged, so the constraint is opt-in."""
+    a, _ = deterministic_cost((44,), (1, 0), 60, {0: 0.1, 1: 0.06}, 22.0, None)
+    b, _ = deterministic_cost((44,), (1, 0), 60, {0: 0.1, 1: 0.06}, 22.0, {})
+    assert np.isfinite(a) and np.isfinite(b)
+    assert np.isclose(a, b)
+
+
+def test_enumeration_respects_the_ceiling():
+    p = _params(race_laps=60)
+    p.max_stint_by_rank = {0: 15, 1: 20, 2: 25}
+    for c in enumerate_strategies(p, max_stops=2):
+        ranks = (c.strategy.start_rank, *(r for _, r in c.strategy.stops))
+        for n, rank in zip(c.stint_lengths, ranks):
+            assert n <= p.max_stint_by_rank[rank], f"{n} laps on rank {rank} exceeds the cap"

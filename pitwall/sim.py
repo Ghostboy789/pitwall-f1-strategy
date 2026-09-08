@@ -70,8 +70,15 @@ class CircuitParams:
     caution_hazard_per_lap: float
     traffic_s: float
     deg_by_rank: dict[int, float]
+    # Longest stint ever plausibly run on each compound rank at this circuit,
+    # taken from the 95th percentile of observed stints. The degradation model
+    # is linear and, because the censoring correction is only partial, it
+    # understates the cliff -- so without this the optimiser happily proposes a
+    # 53-lap stint at a circuit whose longest observed stint on that compound
+    # is 43 laps and whose median is 18. See models_out/stint_limits.parquet.
+    max_stint_by_rank: dict[int, int] = field(default_factory=dict)
     # p(pass per lap) indexed by pace advantage in s/lap; see pass_probability.
-    pass_p_base: float
+    pass_p_base: float = 0.08
     pass_p_per_s: float = 0.35
     lap_time_sd_s: float = 0.25
     sc_lap_multiplier: float = SC_LAP_MULTIPLIER

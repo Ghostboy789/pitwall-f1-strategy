@@ -114,6 +114,9 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
         build_circuit_reference(laps).to_parquet(
             config.MODELS_OUT / "circuit_reference.parquet", index=False
         )
+        build_stint_limits(stints).to_parquet(
+            config.MODELS_OUT / "stint_limits.parquet", index=False
+        )
 
     metrics = {
         "n_races": int(laps["race_id"].nunique()),
@@ -186,6 +189,16 @@ def circuit_params(
     trow = tp[tp["circuit"] == circuit]
     pass_base = float(trow["p_pass_per_lap"].iloc[0]) if len(trow) else 0.08
 
+    rank_of = {"SOFTEST": 0, "MIDDLE": 1, "HARDEST": 2}
+    limits = a.get("stint_limits")
+    max_stint: dict[int, int] = {}
+    if limits is not None and len(limits):
+        lrow = limits[limits["circuit"] == circuit]
+        for _, r in lrow.iterrows():
+            rank = rank_of.get(str(r["compound_rank_label"]))
+            if rank is not None:
+                max_stint[rank] = int(r["max_stint"])
+
     if race_laps is None:
         rl = a.get("race_laps_by_circuit", {}).get(circuit)
         race_laps = int(rl) if rl is not None and pd.notna(rl) else 55
@@ -203,8 +216,41 @@ def circuit_params(
         caution_hazard_per_lap=hazard,
         traffic_s=traffic,
         deg_by_rank=deg_by_rank,
+        max_stint_by_rank=max_stint,
         pass_p_base=pass_base,
     )
+
+
+STINT_LIMIT_QUANTILE = 0.95
+
+
+def build_stint_limits(stints: pd.DataFrame) -> pd.DataFrame:
+    """Longest stint plausibly run on each compound rank, per circuit.
+
+    The optimiser needs a feasibility ceiling because the degradation model is
+    linear and understates the cliff: without one it proposes stints no team
+    has ever run. The ceiling is the 95th percentile of observed stint lengths,
+    which is a fact about the data rather than a tuned parameter.
+
+    Circuits with too few stints on a compound fall back to the global
+    percentile for that compound rather than to an invented number.
+    """
+    d = stints[stints["stint_length"] >= config.MIN_STINT_LAPS_FOR_DEG]
+    d = d.dropna(subset=["compound_rank_label"])
+    if d.empty:
+        return pd.DataFrame(columns=["circuit", "compound_rank_label", "max_stint", "n"])
+
+    glob = d.groupby("compound_rank_label")["stint_length"].quantile(STINT_LIMIT_QUANTILE)
+    out = (
+        d.groupby(["circuit", "compound_rank_label"])["stint_length"]
+        .agg(n="size", max_stint=lambda x: x.quantile(STINT_LIMIT_QUANTILE))
+        .reset_index()
+    )
+    thin = out["n"] < 10
+    out.loc[thin, "max_stint"] = out.loc[thin, "compound_rank_label"].map(glob)
+    out["max_stint"] = out["max_stint"].round().astype(int)
+    out["fell_back_to_global"] = thin
+    return out
 
 
 def build_circuit_reference(laps: pd.DataFrame) -> pd.DataFrame:
@@ -246,6 +292,9 @@ def load_artifacts() -> dict:
         "circuit_pass_effects": pd.read_parquet(m / "circuit_pass_effects.parquet"),
         "metrics": json.loads((m / "metrics.json").read_text()),
     }
+
+    lim_path = m / "stint_limits.parquet"
+    out["stint_limits"] = pd.read_parquet(lim_path) if lim_path.exists() else None
 
     ref_path = m / "circuit_reference.parquet"
     laps_path = config.PROCESSED / "laps_all.parquet"

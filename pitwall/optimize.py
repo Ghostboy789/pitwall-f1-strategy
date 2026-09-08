@@ -59,6 +59,7 @@ def deterministic_cost(
     race_laps: int,
     deg_by_rank: dict[int, float],
     pit_loss_s: float,
+    max_stint_by_rank: dict[int, int] | None = None,
 ) -> tuple[float, tuple[int, ...]]:
     """Tyre cost plus pit cost for one strategy. Lower is better.
 
@@ -71,6 +72,19 @@ def deterministic_cost(
     lengths = tuple(boundaries[i + 1] - boundaries[i] for i in range(len(boundaries) - 1))
     if any(n < MIN_STINT_LAPS for n in lengths):
         return np.inf, lengths
+
+    # Reject stints longer than anything actually run on that compound here.
+    #
+    # This is a feasibility constraint, not a tuned parameter. The sanity gate
+    # showed the optimiser winning by proposing stints no team has ever
+    # attempted - a 53-lap stint at Albert Park against a 95th percentile of
+    # 43 and a median of 18 - because a linear degradation model cannot see
+    # the cliff. The ceiling comes from the data, per circuit and compound.
+    if max_stint_by_rank:
+        for n, rank in zip(lengths, ranks):
+            cap = max_stint_by_rank.get(rank)
+            if cap and n > cap:
+                return np.inf, lengths
 
     tyre = sum(deg_by_rank.get(rank, 0.05) * n * (n + 1) / 2.0 for n, rank in zip(lengths, ranks))
     return tyre + len(stop_laps) * pit_loss_s, lengths
@@ -100,7 +114,12 @@ def enumerate_strategies(
                 if require_two_compounds and len(set(ranks)) < 2:
                     continue
                 cost, lengths = deterministic_cost(
-                    stop_laps, ranks, laps, params.deg_by_rank, params.pit_loss_s
+                    stop_laps,
+                    ranks,
+                    laps,
+                    params.deg_by_rank,
+                    params.pit_loss_s,
+                    params.max_stint_by_rank,
                 )
                 if not np.isfinite(cost):
                     continue
