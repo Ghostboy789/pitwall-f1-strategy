@@ -1,0 +1,9 @@
+# Make the GitHub language bar reflect Python, not vendored web assets.
+* text=auto eol=lf
+
+app/static/**   linguist-vendored
+app/templates/* linguist-documentation
+reports/**      linguist-documentation
+*.html          linguist-detectable=false
+*.css           linguist-detectable=false
+notebooks/**    linguist-documentation

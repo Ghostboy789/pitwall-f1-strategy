@@ -1,0 +1,32 @@
+# Data & caches — never commit
+data/
+cache/
+fastf1_cache/
+*.parquet
+*.feather
+*.ff1pkl
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Model artefacts (regenerable)
+models_out/
+*.joblib
+*.pkl
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets
+.env
+*.key
