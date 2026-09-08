@@ -51,8 +51,8 @@ def _is_rate_limit(exc: BaseException) -> bool:
     return "RateLimitExceeded" in type(exc).__name__ or "500 calls/h" in str(exc)
 
 
-def setup_fastf1() -> None:
-    """Point FastF1 at the project cache, quieten it, and drop one API call.
+def setup_fastf1(no_ergast: bool = False) -> None:
+    """Point FastF1 at the project cache, quieten it, and drop API calls.
 
     FastF1 makes two Ergast-mirror calls per race session: one for driver
     info and classification (needed here - grid position feeds the overtaking
@@ -80,6 +80,25 @@ def setup_fastf1() -> None:
         )
         fastf1.core.Session._pitwall_first_lap_patched = True
         log.info("disabled FastF1's first-lap Ergast lookup (lap 1 is filtered out anyway)")
+
+    if no_ergast:
+        # Drop the remaining Ergast call as well, for the bulk pass.
+        #
+        # Verified on 2018 round 1: with both calls disabled the lap table is
+        # unchanged at (940, 31) with every modelling column intact, and
+        # weather, track status and race control are untouched. What is lost
+        # is confined to `results`: GridPosition, Points, Status and
+        # ClassifiedPosition come back empty.
+        #
+        # Those matter for the counterfactual audit, so they are not
+        # abandoned - they are fetched separately by
+        # `pitwall.backfill_results`, one paced call per race, which is a
+        # budget of ~190 calls against the mirror's 500/hour instead of the
+        # several hundred a full ingest spends.
+        fastf1.core.Session._drivers_results_from_ergast = (
+            lambda self, **kw: None  # noqa: ARG005
+        )
+        log.info("Ergast disabled entirely: laps unaffected, results backfilled separately")
 
 
 def timedeltas_to_seconds(df: pd.DataFrame) -> pd.DataFrame:
@@ -314,6 +333,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--force", action="store_true", help="re-download sessions already on disk")
     ap.add_argument("--limit", type=int, default=0, help="stop after N sessions (smoke test)")
     ap.add_argument(
+        "--no-ergast",
+        action="store_true",
+        help="skip the Ergast-mirror call entirely; laps, weather and track status are "
+        "unaffected, and results are backfilled later by pitwall.backfill_results",
+    )
+    ap.add_argument(
         "--retry-transient",
         action="store_true",
         help="re-attempt sessions that failed for a transient reason (rate limiting, "
@@ -327,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
         datefmt="%H:%M:%S",
         stream=sys.stdout,
     )
-    setup_fastf1()
+    setup_fastf1(no_ergast=args.no_ergast)
 
     races = enumerate_races(tuple(args.seasons))
     log.info("scope: %d races across seasons %s", len(races), args.seasons)
