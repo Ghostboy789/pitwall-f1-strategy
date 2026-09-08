@@ -19,7 +19,8 @@ a valid response for the whole 2018–2026 range. No redesign was needed. Full
 evidence in `SOURCES.md`.
 
 **Scope.** All 186 completed championship races, 2018–2026, across 32 canonical
-circuits. **185 ingested successfully.**
+circuits. **185 ingested successfully**, giving 203,644 laps of which 149,432
+survive the pre-registered filters, across 44 drivers and 21 teams.
 
 **The one permanent hole.** The 2018 Italian Grand Prix (Monza, round 14) has
 no usable lap data: FastF1 logs `Failed to load timing data!` and `Session.laps`
@@ -86,7 +87,7 @@ unobserved and missing non-randomly.
 
 **The selection is measured, not assumed.** For every stint that ended in a pit
 stop, the slope over its first five laps predicts how soon it was pitted:
-**r = −0.101, p < 10⁻⁹, across 3,894 stints**. Stints degrading faster were
+**r = −0.126, p = 1.7×10⁻¹⁷, across 4,565 stints**. Stints degrading faster were
 ended sooner.
 
 **A second, larger selection was found during the build.** Teams do not only
@@ -142,9 +143,9 @@ entirely rather than shown with a fabricated interval.
 With no refuelling, fuel mass is a deterministic function of laps completed.
 
 **A negative result, reported as one.** Fuel burn and track evolution are
-**not separately identified** in race data. Zero of 20 circuits met the
+**not separately identified** in race data. Zero of 27 circuits met the
 separability threshold; the median correlation between the fuel proxy and
-elapsed session time is **0.9990**. An earlier permissive threshold let the
+elapsed session time is **0.9981**. An earlier permissive threshold let the
 split through and produced obviously compensating estimates (Hungaroring:
 fuel −0.31 s/lap against evolution +4.77 s).
 
@@ -154,13 +155,13 @@ any given lap number the field carries a wide spread of tyre ages. Median VIF
 for tyre age against fuel is **1.27**.
 
 **Two independent estimates agree.** The mixed-effects pace model returns
-**−0.0595 s/lap**; the entirely separate degradation specification returns
+**−0.0535 s/lap**; the entirely separate degradation specification returns
 **−0.0574 s/lap**. Both sit inside the physically expected band (~1.7 kg/lap ×
-~0.03 s/kg ≈ 0.05 s/lap), and **all 20 circuits** fall in that band — with
+~0.03 s/kg ≈ 0.05 s/lap), and **all 27 circuits** fall in that band — with
 nothing calibrated to achieve it.
 
 **And it behaves like fuel.** The coefficient scales with circuit lap distance,
-as fuel must and track evolution need not: **r = −0.858, p = 1.3×10⁻⁶**.
+as fuel must and track evolution need not: **r = −0.759, p = 4×10⁻⁶**.
 
 The two-way estimator in T2 sidesteps this problem rather than solving it:
 cars in the same race-moment share a fuel load *and* a track state, so both
@@ -345,6 +346,26 @@ the artefacts behind them. The procedures are:
 - **V3 the sanity gate** — thresholds fixed in advance: mean gain > 2.0 s, or
   the optimiser beating > 70% of car-races, or any single gain > 30 s declares
   the model broken.
+
+  **It tripped, on all three, and the diagnosis is a result in itself.** The
+  first run returned a mean gain of 23.49 s, beat 97% of car-races, and claimed
+  a single gain of 107.6 s. The cause was not the optimiser but the
+  reconstruction it was compared against: strategies were inferred from
+  FastF1's `Stint` counter, which increments for reasons other than a pit stop,
+  so the audit invented stops on consecutive laps and lap-1 stops that refitted
+  the compound already on the car. The simulator charges full pit loss per
+  stop, so a phantom stop cost ~22 s of race time that never happened.
+
+  The diagnostic signature was that mean claimed gain rose monotonically with
+  the number of *reconstructed* stops — 10.9 s at one, 22.0 s at two, 47.8 s at
+  three, 69.6 s at four. A genuine strategic insight would not scale with an
+  artefact of the parser.
+
+  A stop is now defined as an in-lap and nothing else; runs of consecutive
+  in-laps collapse to one; a stop on the final lap is ignored; and a
+  reconstruction claiming more than four stops is dropped rather than modelled.
+  A second bug surfaced in the same pass: the audit simulated each race over
+  the circuit's *median* lap count rather than that race's own.
 - **V4 ablations** — each component removed, change in held-out error reported.
 - **V5 data-quality gates** — structural checks on the pipeline itself.
 

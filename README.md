@@ -133,9 +133,54 @@ across the whole race, so it can see past the pass. Ablating it costs 0.015 AUC
 
 **All 8 data-quality gates pass** across 203,644 laps.
 
-**The sanity gate** — thresholds fixed in advance, because an optimiser that
-beats professional strategists by a wide margin is broken, not brilliant — is
-reported in `MORNING_REPORT.md` and on the dashboard.
+### The sanity gate failed, and that is the most useful thing in this repo
+
+Validation V3 asks a question with a pre-registered answer: how much better than
+real F1 strategists does the optimiser claim to be? Thresholds were fixed in
+`VALIDATION_PLAN.md` before anything was computed — a mean gain above 2.0 s,
+beating more than 70% of car-races, or any single gain above 30 s declares the
+model **broken**, not brilliant.
+
+The first run tripped **all three**:
+
+| Criterion | Result | Threshold |
+|---|---|---|
+| Mean gain over real strategy | **23.49 s** | 2.0 s |
+| Car-races the optimiser beat | **97%** | 70% |
+| Largest single claimed gain | **107.6 s** | 30 s |
+
+**It was not beating strategists. It was beating a corrupted reconstruction of
+what they did.** Strategies were inferred from FastF1's `Stint` counter, which
+increments for reasons other than a pit stop, so the audit invented races nobody
+ran:
+
+```
+start-r1 L2->r1  L3->r1  L36->r2 L63->r0    stops on laps 2 AND 3
+start-r1 L35->r2 L36->r2 L37->r2 L45->r2    three stops in three laps
+start-r1 L1->r1  ...                        a lap-1 stop refitting the
+                                            compound already on the car
+```
+
+The simulator charges full pit loss per stop, so a car credited with five
+phantom stops paid ~110 s its real race never spent. The signature was
+unmistakable once looked for — mean claimed gain rose monotonically with the
+number of *reconstructed* stops:
+
+| Reconstructed stops | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| Mean claimed gain | 10.9 s | 22.0 s | 47.8 s | 69.6 s |
+
+That is the shape of an artefact, not of a strategic insight.
+
+**The fix:** a stop is an in-lap — the authoritative signal — and only that.
+Consecutive in-laps collapse to one stop, a stop on the final lap is ignored,
+and a reconstruction claiming more than four stops is dropped rather than
+modelled. Reconstruction now looks like real F1: a 2021 race resolves to 11
+one-stops, 8 two-stops and 1 three-stop.
+
+Without the gate, this project would have published a model claiming it could
+save professional race strategists twenty-three seconds a race. The current
+verdict is in `MORNING_REPORT.md` and on the dashboard.
 
 ---
 
@@ -154,6 +199,8 @@ impossible, not by a test failing.
 | Every circuit shrunk to **one** caution rate | binomial SE over laps treated 300 correlated laps as 300 trials |
 | The optimiser's "top 6" was **one plan shifted a lap** | ranked globally instead of by strategy family |
 | A data-quality gate failing on **565 stints** | the gate was wrong — those are used tyre sets, correctly flagged |
+| Optimiser beating real strategy by **23.5 s** | stops inferred from a stint counter, inventing pit stops nobody made |
+| A stop at lap 37 surviving a 35/36/37 run | compared against the last *accepted* stop, not the last in-lap seen |
 
 ---
 
