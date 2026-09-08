@@ -35,9 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--top-k", type=int, default=6)
     ap.add_argument("--max-stops", type=int, default=2)
     ap.add_argument("--seed", type=int, default=config.SEED)
-    ap.add_argument(
-        "--restart", action="store_true", help="discard partial results and start over"
-    )
+    ap.add_argument("--restart", action="store_true", help="discard partial results and start over")
     args = ap.parse_args(argv)
 
     logging.basicConfig(
