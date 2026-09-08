@@ -110,13 +110,44 @@ def reconstruct_strategies(laps: pd.DataFrame, race_id: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def grid_positions(race_id: str) -> dict[str, int]:
+    """Real starting grid for one race, from the backfilled classification.
+
+    Returns ``{driver_code: grid}``. Empty when the race has no classification
+    on disk, in which case the caller falls back to the order at the end of
+    lap 1 - which is worse, because lap 1 has already been raced and the start
+    is where most positions change.
+    """
+    from pitwall.backfill_results import OUT_DIR
+
+    try:
+        year, rnd = race_id.split("_")
+        path = OUT_DIR / f"{int(year)}_{int(rnd):02d}.parquet"
+        if not path.exists():
+            return {}
+        d = pd.read_parquet(path)
+        out: dict[str, int] = {}
+        for _, r in d.iterrows():
+            code = str(r.get("driverCode") or "").strip()
+            grid = r.get("grid")
+            if code and pd.notna(grid) and int(grid) > 0:
+                out[code] = int(grid)
+        return out
+    except Exception:
+        return {}
+
+
 def build_field(laps: pd.DataFrame, race_id: str, strategies: pd.DataFrame) -> list[Car]:
     """Grid, pace and plan for every car in one race.
 
     Pace comes from each car's own clean-air laps in that race, expressed
-    relative to the quickest car. Grid position falls back to the order at the
-    end of lap 1 where classification data is unavailable - a documented
-    approximation, since lap 1 has already been raced.
+    relative to the quickest car. Grid position comes from the real
+    classification where it has been backfilled, and falls back to the order at
+    the end of lap 1 otherwise - a documented approximation, since lap 1 has
+    already been raced.
+
+    A grid of 0 in the source means a pit-lane start; those are treated as
+    missing and fall back too, rather than being placed on pole.
     """
     r = laps[laps["race_id"] == race_id].copy()
     r["lap_time_s"] = pd.to_numeric(r["LapTime"], errors="coerce")
@@ -126,6 +157,7 @@ def build_field(laps: pd.DataFrame, race_id: str, strategies: pd.DataFrame) -> l
         return []
     pace = pace - pace.min()
 
+    real_grid = grid_positions(race_id)
     lap1 = (
         r[r["LapNumber"] == 1].set_index("car_id")["Position"].to_dict()
         if (r["LapNumber"] == 1).any()
@@ -135,17 +167,20 @@ def build_field(laps: pd.DataFrame, race_id: str, strategies: pd.DataFrame) -> l
     cars = []
     for _, row in strategies.iterrows():
         cid = row["car_id"]
-        # Lap-1 position can be missing when a car's first lap did not record
-        # (a first-corner incident, a missed timing loop). Falling back to the
-        # next free slot keeps the field intact rather than dropping the car.
-        pos = lap1.get(cid)
-        grid = int(pos) if pos is not None and np.isfinite(pos) else len(cars) + 1
+        # Real grid first. Failing that, the order at the end of lap 1 - which
+        # can itself be missing when a car's first lap did not record (a
+        # first-corner incident, a missed timing loop), in which case the next
+        # free slot keeps the field intact rather than dropping the car.
+        grid = real_grid.get(str(row["driver"]))
+        if grid is None:
+            pos = lap1.get(cid)
+            grid = int(pos) if pos is not None and np.isfinite(pos) else len(cars) + 1
         cars.append(
             Car(
                 driver=row["driver"],
                 team=row["team"],
                 pace_offset_s=float(pace.get(cid, pace.median())),
-                grid_position=grid,
+                grid_position=int(grid),
                 strategy=row["strategy"],
             )
         )

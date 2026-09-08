@@ -130,9 +130,20 @@ function drawDegradation(mount, rows) {
   const span = (hi - lo) || 1;
   const x = v => labelW + ((v - lo) / span) * plotW;
 
-  el("line", { class: "baseline", x1: x(0), x2: x(0), y1: top - 6, y2: H - bot }, svg);
-  const zt = el("text", { class: "tick-label", x: x(0), y: H - bot + 16, "text-anchor": "middle" }, svg);
-  zt.textContent = "0";
+  // Recessive grid with real tick values -- a bare "0" leaves the reader
+  // unable to judge magnitude, which is the whole point of this chart.
+  const nice = hi <= 0.05 ? 0.01 : hi <= 0.12 ? 0.02 : 0.05;
+  for (let v = Math.ceil(lo / nice) * nice; v <= hi + 1e-9; v += nice) {
+    const isZero = Math.abs(v) < 1e-9;
+    el("line", {
+      class: isZero ? "baseline" : "gridline",
+      x1: x(v), x2: x(v), y1: top - 6, y2: H - bot,
+    }, svg);
+    const t = el("text", {
+      class: "tick-label", x: x(v), y: H - bot + 16, "text-anchor": "middle",
+    }, svg);
+    t.textContent = isZero ? "0" : v.toFixed(2);
+  }
   const ax = el("text", { class: "axis-label", x: labelW + plotW / 2, y: H - 4, "text-anchor": "middle" }, svg);
   ax.textContent = "seconds lost per lap of tyre age";
 

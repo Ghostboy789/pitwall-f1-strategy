@@ -15,8 +15,10 @@
 
 <header class="masthead">
   <div class="eyebrow">Pit Wall · Formula 1 strategy counterfactuals</div>
-  {% if headline %}
+  {% if headline and headline.distinguishable %}
   <h1>The same tyre advantage is worth<br>{{ "%.0f"|format(headline.ratio) }}&times; more at {{ headline.top_name }} than at&nbsp;{{ headline.bottom_name }}.</h1>
+  {% elif headline %}
+  <h1>What track position is worth<br>varies {{ "%.0f"|format(headline.ratio) }}&times; across the calendar.</h1>
   {% else %}
   <h1>What track position is worth,<br>in seconds, per circuit.</h1>
   {% endif %}

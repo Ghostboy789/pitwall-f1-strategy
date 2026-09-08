@@ -41,6 +41,11 @@ templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
 STATE: dict[str, Any] = {}
 
+# A circuit needs this many races before it is allowed to anchor the headline
+# claim. Without it the strapline names whichever circuit happens to sit at the
+# bottom of the table, which is usually the one with the least evidence.
+HEADLINE_MIN_RACES = 5
+
 
 def _pretty(circuit: str) -> str:
     ref = CIRCUIT_REF.get(circuit)
@@ -79,7 +84,14 @@ def load_state() -> None:
 
     # The headline comparison is derived, never typed: the extremes of the
     # fitted table decide which circuits the strapline names.
-    tp_sorted = tp.sort_values("value_s", ascending=False)
+    #
+    # Restricted to circuits with a real sample. Taking the outright minimum
+    # named Hockenheimring, which rests on two races -- a bigger ratio bought
+    # from the thinnest evidence on the page. Requiring HEADLINE_MIN_RACES
+    # gives a slightly smaller claim standing on much firmer ground, and the
+    # pair it picks is one whose intervals actually separate.
+    eligible = tp[tp["n_races"] >= HEADLINE_MIN_RACES]
+    tp_sorted = (eligible if len(eligible) >= 2 else tp).sort_values("value_s", ascending=False)
     if len(tp_sorted) >= 2:
         top, bottom = tp_sorted.iloc[0], tp_sorted.iloc[-1]
         STATE["headline"] = {
@@ -88,6 +100,12 @@ def load_state() -> None:
             "bottom_name": bottom["name"],
             "bottom_value": float(bottom["value_s"]),
             "ratio": float(top["value_s"] / bottom["value_s"]) if bottom["value_s"] else None,
+            "top_races": int(top["n_races"]),
+            "bottom_races": int(bottom["n_races"]),
+            # Only claim a difference the intervals actually support.
+            "distinguishable": bool(
+                top["value_lo"] > bottom["value_hi"] or bottom["value_lo"] > top["value_hi"]
+            ),
         }
     else:
         STATE["headline"] = None

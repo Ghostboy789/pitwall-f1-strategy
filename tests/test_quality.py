@@ -34,6 +34,7 @@ def _laps(n_cars=3, n_laps=20, circuit="monza"):
                     "is_inlap": lap == 10,
                     "is_outlap": lap == 11,
                     "is_wet_tyre": False,
+                    "FreshTyre": True,
                     "circuit": circuit,
                     "race_laps": n_laps,
                     "year": 2023,
@@ -55,6 +56,27 @@ def test_gate_catches_non_monotonic_lap_numbers():
     d.loc[5, "LapNumber"] = 2  # goes backwards
     g = quality.run_gates(d).set_index("check")
     assert not g.loc["lap_number_monotonic", "passed"]
+
+
+def test_fresh_tyre_gate_passes_for_used_sets():
+    """A scrubbed set legitimately starts older than the one just removed.
+
+    An earlier version of this gate failed on exactly that, on 565 real
+    stints. It was the gate that was wrong.
+    """
+    d = _laps()
+    d["FreshTyre"] = False
+    d.loc[d["Stint"] == 2, "TyreLife"] = d.loc[d["Stint"] == 2, "LapNumber"] + 30
+    g = quality.run_gates(d).set_index("check")
+    assert g.loc["fresh_tyre_starts_at_age_1", "passed"]
+
+
+def test_fresh_tyre_gate_catches_a_fresh_set_starting_old():
+    d = _laps()
+    d["FreshTyre"] = True
+    d.loc[d["Stint"] == 2, "TyreLife"] = d.loc[d["Stint"] == 2, "LapNumber"] + 30
+    g = quality.run_gates(d).set_index("check")
+    assert not g.loc["fresh_tyre_starts_at_age_1", "passed"]
 
 
 def test_gate_catches_tyre_age_not_incrementing():

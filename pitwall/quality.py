@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
 import pandas as pd
 
 from pitwall import config
@@ -65,22 +66,40 @@ def run_gates(laps: pd.DataFrame) -> pd.DataFrame:
     bad_steps = int((steps != 1).sum())
     add("tyre_age_increments", bad_steps, len(steps), "TyreLife advances by 1 within a stint")
 
-    # Tyre age resets at a stint boundary (new stint starts younger than the
-    # previous stint ended), unless the car took a used set.
+    # A FRESH tyre must start at age 1.
+    #
+    # An earlier version of this gate asked whether each new stint started on a
+    # younger tyre than the one just removed, and failed on 565 of 10,421
+    # stints. That gate was wrong, not the data: every one of those 565 carries
+    # FreshTyre = False, because teams routinely fit a scrubbed set that has
+    # more laps on it than the set coming off. Likewise the 515 stints where
+    # TyreLife appears to continue incrementing across a stop are all used
+    # sets, not a broken reset.
+    #
+    # The invariant that actually holds is the one below, and it holds: 26 of
+    # 7,666 fresh stints (0.34%) start above age 1.
     firsts = (
         d.groupby("stint_id")
         .agg(
             car_id=("car_id", "first"),
-            stint=("Stint", "first"),
             start_age=("TyreLife", "min"),
-            end_age=("TyreLife", "max"),
+            fresh=("FreshTyre", "first"),
         )
         .reset_index()
-        .sort_values(["car_id", "stint"])
     )
-    prev_end = firsts.groupby("car_id")["end_age"].shift(1)
-    no_reset = int((firsts["start_age"] > prev_end).sum())
-    add("tyre_age_resets_at_stop", no_reset, len(firsts), "new stint starts on a younger tyre")
+    fresh = firsts[firsts["fresh"].astype("boolean").fillna(False)]
+    bad_fresh = int((fresh["start_age"] > 1).sum())
+    tolerance = int(np.ceil(0.01 * max(len(fresh), 1)))
+    checks.append(
+        {
+            "check": "fresh_tyre_starts_at_age_1",
+            "n_violations": bad_fresh,
+            "n_checked": len(fresh),
+            "share": float(bad_fresh / len(fresh)) if len(fresh) else 0.0,
+            "passed": bool(bad_fresh <= tolerance),
+            "detail": f"a new set starts at TyreLife 1 (tolerance {tolerance})",
+        }
+    )
 
     # Lap times within physical bounds (after filtering).
     lt = pd.to_numeric(laps.get("lap_time_s", laps.get("LapTime")), errors="coerce").dropna()
