@@ -135,12 +135,17 @@ def build_field(laps: pd.DataFrame, race_id: str, strategies: pd.DataFrame) -> l
     cars = []
     for _, row in strategies.iterrows():
         cid = row["car_id"]
+        # Lap-1 position can be missing when a car's first lap did not record
+        # (a first-corner incident, a missed timing loop). Falling back to the
+        # next free slot keeps the field intact rather than dropping the car.
+        pos = lap1.get(cid)
+        grid = int(pos) if pos is not None and np.isfinite(pos) else len(cars) + 1
         cars.append(
             Car(
                 driver=row["driver"],
                 team=row["team"],
                 pace_offset_s=float(pace.get(cid, pace.median())),
-                grid_position=int(lap1.get(cid, len(cars) + 1)),
+                grid_position=grid,
                 strategy=row["strategy"],
             )
         )

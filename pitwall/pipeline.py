@@ -194,7 +194,11 @@ def circuit_params(
 def load_artifacts() -> dict:
     """Read every persisted artefact back from disk."""
     m = config.MODELS_OUT
-    laps = pd.read_parquet(config.PROCESSED / "laps_all.parquet")
+    # `dataset.build` persists laps before compound ranking is applied, so the
+    # rank is recomputed here rather than stored twice and allowed to drift.
+    laps = compounds.add_relative_hardness(
+        pd.read_parquet(config.PROCESSED / "laps_all.parquet")
+    )
     med = (
         laps.assign(_t=pd.to_numeric(laps["LapTime"], errors="coerce"))
         .query("is_green")
