@@ -35,6 +35,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--top-k", type=int, default=6)
     ap.add_argument("--max-stops", type=int, default=2)
     ap.add_argument("--seed", type=int, default=config.SEED)
+    ap.add_argument(
+        "--restart", action="store_true", help="discard partial results and start over"
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -84,9 +87,26 @@ def main(argv: list[str] | None = None) -> int:
         n_sims=args.n_sims, top_k=args.top_k, max_stops=args.max_stops, seed=args.seed
     )
 
-    frames = []
+    # Resumable, per race.
+    #
+    # A full pass is ~50 minutes and this has now been lost twice to the
+    # session ending under it. Partial results are written after every race and
+    # completed races are skipped on restart, so an interruption costs one race
+    # rather than the run -- the same property ingestion has.
+    partial_path = config.MODELS_OUT / "audit_partial.parquet"
+    frames: list[pd.DataFrame] = []
+    done: set[str] = set()
+    if partial_path.exists() and not args.restart:
+        prev = pd.read_parquet(partial_path)
+        if len(prev):
+            frames.append(prev)
+            done = set(prev["race_id"].unique())
+            log.info("resuming: %d races already audited", len(done))
+
     params_cache: dict[str, object] = {}
     for i, race_id in enumerate(sorted(usable), 1):
+        if race_id in done:
+            continue
         circuit = circuit_of[race_id]
         if circuit not in params_cache:
             params_cache[circuit] = pipeline.circuit_params(circuit, art)
@@ -99,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         if res.empty:
             continue
         frames.append(res)
+        pd.concat(frames, ignore_index=True).to_parquet(partial_path, index=False)
         log.info(
             "[%3d/%d] %-14s %s  %2d cars  mean gain %+.2fs  %4.1fs",
             i,
@@ -116,6 +137,7 @@ def main(argv: list[str] | None = None) -> int:
 
     a = pd.concat(frames, ignore_index=True)
     a.to_parquet(config.MODELS_OUT / "audit.parquet", index=False)
+    partial_path.unlink(missing_ok=True)
 
     gate = audit.sanity_gate(a)
     (config.MODELS_OUT / "sanity_gate.json").write_text(json.dumps(gate, indent=2, default=float))
