@@ -131,3 +131,13 @@ def test_gate_thresholds_are_the_pre_registered_ones():
         "max_share_improved": 0.70,
         "max_single_gain_s": 30.0,
     }
+
+
+def test_start_compound_is_held_fixed_by_default():
+    """A counterfactual that changes the start tyre answers the wrong question.
+
+    From 2018-2021 the top ten had to start on their Q2 tyre. An optimiser
+    free to ignore that beats the team by breaking a rule the team obeyed.
+    """
+    cfg = audit.AuditConfig()
+    assert cfg.fix_start_compound is True

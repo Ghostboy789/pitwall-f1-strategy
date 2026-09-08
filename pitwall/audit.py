@@ -58,6 +58,21 @@ class AuditConfig:
     min_laps_completed_frac: float = 0.9
     seed: int = config.SEED
 
+    # Hold the starting compound at whatever the car actually started on.
+    #
+    # This is the difference between a fair counterfactual and an unfair one.
+    # From 2018 to 2021 the top-ten qualifiers were REQUIRED to start on the
+    # tyre they set their Q2 time on, almost always the softest available, and
+    # a soft start also buys first-lap track position the simulator does not
+    # model. Left free, the optimiser simply refuses to start on the softest
+    # compound - at Monza 2023, 17 of 20 cars really did, and the optimiser
+    # picked it for none of them - and "beats" the team by breaking a rule the
+    # team had to obey.
+    #
+    # With it fixed, the question becomes the one worth asking: given the tyre
+    # you were obliged to start on, were your STOPS optimal?
+    fix_start_compound: bool = True
+
 
 # No dry F1 race is won on more stops than this. A reconstruction claiming
 # more has misread the data, and a car-race that trips it is dropped rather
@@ -248,11 +263,18 @@ def audit_race(
         return pd.DataFrame()
 
     actual = simulate(params, field, n_sims=cfg.n_sims, seed=cfg.seed)
-    candidates = diverse_candidates(
-        enumerate_strategies(params, max_stops=cfg.max_stops), cfg.top_k
-    )
-    if not candidates:
+    all_candidates = enumerate_strategies(params, max_stops=cfg.max_stops)
+    if not all_candidates:
         return pd.DataFrame()
+
+    # Shortlists keyed by starting compound, so a car can be compared only
+    # against alternatives that start on the tyre it was obliged to start on.
+    by_start: dict[int, list] = {}
+    if cfg.fix_start_compound:
+        for rank in {c.strategy.start_rank for c in all_candidates}:
+            same = [c for c in all_candidates if c.strategy.start_rank == rank]
+            by_start[rank] = diverse_candidates(same, cfg.top_k)
+    shortlist_any = diverse_candidates(all_candidates, cfg.top_k)
 
     rows = []
     for i, row in strategies.reset_index(drop=True).iterrows():
@@ -260,6 +282,13 @@ def audit_race(
             continue
         base_time = float(actual.finish_times[:, i].mean())
         base_pos = float(actual.finish_positions[:, i].mean())
+
+        start_rank = row["strategy"].start_rank
+        candidates = (
+            by_start.get(start_rank, shortlist_any) if cfg.fix_start_compound else shortlist_any
+        )
+        if not candidates:
+            continue
 
         best_time, best_pos, best_strategy = base_time, base_pos, None
         for cand in candidates:
