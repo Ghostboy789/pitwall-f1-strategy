@@ -13,6 +13,8 @@ happened, by how much, and with an honest error bar.
 > **The same tyre advantage is worth nine times more at Monaco than at the
 > Circuit of the Americas — and the two are statistically distinguishable.**
 
+![Pit Wall dashboard](docs/dashboard.png)
+
 A car half a second a lap quicker than the one ahead does not simply drive past.
 It waits. How long it waits is a property of the circuit, and that wait, priced
 in seconds, is what track position is worth.
