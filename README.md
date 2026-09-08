@@ -10,8 +10,8 @@ happened, by how much, and with an honest error bar.
 
 ## The finding
 
-> **The same tyre advantage is worth eight times more at Monaco than at Bahrain
-> — and the two are statistically distinguishable.**
+> **The same tyre advantage is worth nine times more at Monaco than at the
+> Circuit of the Americas — and the two are statistically distinguishable.**
 
 A car half a second a lap quicker than the one ahead does not simply drive past.
 It waits. How long it waits is a property of the circuit, and that wait, priced
@@ -31,8 +31,10 @@ second behind, DRS available, mid-race, 25 laps to run:
 | Bahrain International | 31.8% | 1.57 s | 1.2 – 2.7 | 8 |
 | Circuit of the Americas | 34.6% | 1.44 s | 1.0 – 2.5 | 7 |
 
-Monaco against Bahrain is **8.0×** with non-overlapping intervals. Monaco
-against Monza is **5.1×**, also distinguishable.
+Monaco against COTA is **8.7×** with non-overlapping intervals; against Bahrain
+**8.0×**, and against Monza **5.1×** — all three distinguishable. (The strapline
+is restricted to circuits with at least five races, so the claim is never
+anchored on the thinnest sample on the page.)
 
 **What is not established, stated as plainly:** adjacent circuits are *not*
 separable. Zandvoort against Monza (2.6×) and Spa against Monza (0.7×) both
