@@ -100,9 +100,25 @@ def build_opportunities(laps: pd.DataFrame, pace: pd.DataFrame) -> pd.DataFrame:
     next lap, without either car pitting across the boundary.
     """
     d = laps[
-        ["race_id", "circuit", "era", "year", "Driver", "Team", "LapNumber",
-         "Position", "Time", "TyreLife", "Compound", "compound_rank",
-         "is_inlap", "is_outlap", "is_green", "race_laps", "gap_ahead_s"]
+        [
+            "race_id",
+            "circuit",
+            "era",
+            "year",
+            "Driver",
+            "Team",
+            "LapNumber",
+            "Position",
+            "Time",
+            "TyreLife",
+            "Compound",
+            "compound_rank",
+            "is_inlap",
+            "is_outlap",
+            "is_green",
+            "race_laps",
+            "gap_ahead_s",
+        ]
     ].copy()
     d = d.dropna(subset=["Position", "LapNumber", "Time"])
     d["Position"] = d["Position"].astype(int)
@@ -141,10 +157,14 @@ def build_opportunities(laps: pd.DataFrame, pace: pd.DataFrame) -> pd.DataFrame:
 
                 # A position swap bought in the pit lane is not an overtake.
                 if any(
-                    bool(x) for x in (
-                        follower["is_inlap"], leader["is_inlap"],
-                        f_next["is_outlap"], l_next["is_outlap"],
-                        f_next["is_inlap"], l_next["is_inlap"],
+                    bool(x)
+                    for x in (
+                        follower["is_inlap"],
+                        leader["is_inlap"],
+                        f_next["is_outlap"],
+                        l_next["is_outlap"],
+                        f_next["is_inlap"],
+                        l_next["is_inlap"],
                     )
                 ):
                     continue
@@ -163,13 +183,23 @@ def build_opportunities(laps: pd.DataFrame, pace: pd.DataFrame) -> pd.DataFrame:
                         "leader": l_id,
                         "position": int(pos),
                         "gap_s": float(gap),
-                        "pace_delta_s": float(fp - lp) if np.isfinite(fp) and np.isfinite(lp) else np.nan,
+                        "pace_delta_s": float(fp - lp)
+                        if np.isfinite(fp) and np.isfinite(lp)
+                        else np.nan,
                         "tyre_age_delta": float(
                             (follower["TyreLife"] or np.nan) - (leader["TyreLife"] or np.nan)
                         ),
                         "compound_rank_delta": float(
-                            (follower["compound_rank"] if pd.notna(follower["compound_rank"]) else np.nan)
-                            - (leader["compound_rank"] if pd.notna(leader["compound_rank"]) else np.nan)
+                            (
+                                follower["compound_rank"]
+                                if pd.notna(follower["compound_rank"])
+                                else np.nan
+                            )
+                            - (
+                                leader["compound_rank"]
+                                if pd.notna(leader["compound_rank"])
+                                else np.nan
+                            )
                         ),
                         "drs_available": int(gap <= DRS_GAP_S and ln >= DRS_FROM_LAP),
                         "passed": passed,
@@ -188,7 +218,9 @@ def build_opportunities(laps: pd.DataFrame, pace: pd.DataFrame) -> pd.DataFrame:
     )
     log.info(
         "overtaking: %d opportunities across %d races, %d completed passes (%.1f%%)",
-        len(out), out["race_id"].nunique(), int(out["passed"].sum()),
+        len(out),
+        out["race_id"].nunique(),
+        int(out["passed"].sum()),
         100 * out["passed"].mean(),
     )
     return out
@@ -218,8 +250,15 @@ def detector_sanity(opps: pd.DataFrame) -> pd.DataFrame:
 
 
 FEATURES = [
-    "pace_delta_s", "gap_s", "drs_available", "tyre_age_delta",
-    "compound_rank_delta", "lap_progress", "position", "drs_zones", "street",
+    "pace_delta_s",
+    "gap_s",
+    "drs_available",
+    "tyre_age_delta",
+    "compound_rank_delta",
+    "lap_progress",
+    "position",
+    "drs_zones",
+    "street",
 ]
 
 
@@ -261,10 +300,16 @@ def fit(opps: pd.DataFrame, seed: int = config.SEED) -> dict:
         "gbm": Pipeline(
             [
                 ("impute", SimpleImputer(strategy="median")),
-                ("clf", HistGradientBoostingClassifier(
-                    max_depth=4, learning_rate=0.06, max_iter=300,
-                    l2_regularization=1.0, random_state=seed,
-                )),
+                (
+                    "clf",
+                    HistGradientBoostingClassifier(
+                        max_depth=4,
+                        learning_rate=0.06,
+                        max_iter=300,
+                        l2_regularization=1.0,
+                        random_state=seed,
+                    ),
+                ),
             ]
         ),
     }
@@ -284,7 +329,10 @@ def fit(opps: pd.DataFrame, seed: int = config.SEED) -> dict:
         }
         log.info(
             "%s: AUC %.3f  Brier %.4f  (base rate %.4f)",
-            name, results[name]["auc"], results[name]["brier"], y.mean(),
+            name,
+            results[name]["auc"],
+            results[name]["brier"],
+            y.mean(),
         )
 
     # Refit the better-calibrated model on everything for downstream use.
@@ -346,10 +394,16 @@ def fit_hierarchical(opps: pd.DataFrame, seed: int = config.SEED) -> dict:
     pipe = Pipeline(
         [
             ("impute", SimpleImputer(strategy="median")),
-            ("clf", HistGradientBoostingClassifier(
-                max_depth=4, learning_rate=0.06, max_iter=300,
-                l2_regularization=1.0, random_state=seed,
-            )),
+            (
+                "clf",
+                HistGradientBoostingClassifier(
+                    max_depth=4,
+                    learning_rate=0.06,
+                    max_iter=300,
+                    l2_regularization=1.0,
+                    random_state=seed,
+                ),
+            ),
         ]
     )
     base = CalibratedClassifierCV(pipe, method="isotonic", cv=3)
@@ -360,25 +414,30 @@ def fit_hierarchical(opps: pd.DataFrame, seed: int = config.SEED) -> dict:
 
     counts = d.groupby("circuit")["race_id"].nunique()
     usable = [
-        c for c in sorted(d["circuit"].unique())
+        c
+        for c in sorted(d["circuit"].unique())
         if (d["circuit"] == c).sum() >= MIN_OPPS_FOR_CIRCUIT_EFFECT
     ]
     dummies = pd.get_dummies(d["circuit"], dtype=float).reindex(columns=usable, fill_value=0.0)
 
     try:
         glm = sm.GLM(
-            d["passed"].to_numpy(int), dummies.to_numpy(float),
-            family=sm.families.Binomial(), offset=offset,
+            d["passed"].to_numpy(int),
+            dummies.to_numpy(float),
+            family=sm.families.Binomial(),
+            offset=offset,
         ).fit_regularized(alpha=1e-4, L1_wt=0.0)
         raw = np.asarray(glm.params, dtype=float)
         # fit_regularized gives no standard errors; recover them from the
         # unregularised information matrix at the fitted point.
         unreg = sm.GLM(
-            d["passed"].to_numpy(int), dummies.to_numpy(float),
-            family=sm.families.Binomial(), offset=offset,
+            d["passed"].to_numpy(int),
+            dummies.to_numpy(float),
+            family=sm.families.Binomial(),
+            offset=offset,
         ).fit(start_params=raw, maxiter=50)
         raw, se = np.asarray(unreg.params, float), np.asarray(unreg.bse, float)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.warning("circuit-effect GLM failed (%s); falling back to no effects", exc)
         raw = np.zeros(len(usable))
         se = np.full(len(usable), 1.0)
@@ -397,10 +456,11 @@ def fit_hierarchical(opps: pd.DataFrame, seed: int = config.SEED) -> dict:
     ).sort_values("logodds_shrunk")
 
     log.info(
-        "circuit effects: %d circuits, between-circuit SD %.3f log-odds, "
-        "range %.2f to %.2f",
-        len(effects), float(np.sqrt(tau2)),
-        float(effects["logodds_shrunk"].min()), float(effects["logodds_shrunk"].max()),
+        "circuit effects: %d circuits, between-circuit SD %.3f log-odds, range %.2f to %.2f",
+        len(effects),
+        float(np.sqrt(tau2)),
+        float(effects["logodds_shrunk"].min()),
+        float(effects["logodds_shrunk"].max()),
     )
 
     return {
@@ -417,7 +477,8 @@ def predict_hierarchical(fitted: dict, frame: pd.DataFrame) -> np.ndarray:
     """Pass probability for rows carrying a ``circuit`` column."""
     p = np.clip(
         fitted["base_model"].predict_proba(frame[fitted["base_features"]])[:, 1],
-        1e-6, 1 - 1e-6,
+        1e-6,
+        1 - 1e-6,
     )
     lo = np.log(p / (1 - p))
     eff = fitted["effects"].set_index("circuit")["logodds_shrunk"]

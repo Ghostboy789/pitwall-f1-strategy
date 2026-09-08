@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint
+        run: ruff check pitwall app scripts tests
+
+      - name: Format check
+        run: ruff format --check pitwall app scripts tests
+
+      - name: Tests
+        run: pytest -q
+
+      - name: App imports without artefacts
+        # The app must degrade honestly rather than crash when models_out/ is
+        # absent, which is exactly the state a fresh clone is in.
+        run: python -c "from app.main import app; print('ok')"

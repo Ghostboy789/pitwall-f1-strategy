@@ -43,8 +43,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from pitwall import config
-
 # Ordinal hardness, soft -> hard, spanning both naming schemes. Used only to
 # ORDER the compounds present at one event; the absolute positions carry no
 # cross-event meaning and are never used as if they did.

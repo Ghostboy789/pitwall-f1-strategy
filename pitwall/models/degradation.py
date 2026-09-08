@@ -101,7 +101,9 @@ def _stint_frame(pace: pd.DataFrame, stints: pd.DataFrame) -> pd.DataFrame:
     d = pace[pace["stint_id"].isin(set(keep))].copy()
     d["tyre_age"] = pd.to_numeric(d["TyreLife"], errors="coerce")
     d["lap_bucket"] = (
-        d["race_id"] + "_b" + (pd.to_numeric(d["LapNumber"]) // LAP_BUCKET).astype("Int64").astype(str)
+        d["race_id"]
+        + "_b"
+        + (pd.to_numeric(d["LapNumber"]) // LAP_BUCKET).astype("Int64").astype(str)
     )
     return d.dropna(subset=["tyre_age", "lap_time_s"])
 
@@ -259,7 +261,7 @@ def selection_evidence(pace: pd.DataFrame, stints: pd.DataFrame) -> dict:
             {
                 "stint_id": stint_id,
                 "early_slope": float(np.polyfit(x, y, 1)[0]),
-                "stint_length": int(len(grp)),
+                "stint_length": len(grp),
             }
         )
 
@@ -274,7 +276,7 @@ def selection_evidence(pace: pd.DataFrame, stints: pd.DataFrame) -> dict:
     rho, prho = stats.spearmanr(e["early_slope"], e["stint_length"])
     return {
         "status": "ok",
-        "n_stints": int(len(e)),
+        "n_stints": len(e),
         "pearson_r": float(r),
         "pearson_p": float(p),
         "spearman_rho": float(rho),
@@ -321,8 +323,10 @@ def fit_stint_survival(stints: pd.DataFrame):
         aft.fit(model_df, duration_col="duration", event_col="observed")
     log.info(
         "stint survival: %d stints, %d uncensored (%.0f%%), concordance %.3f",
-        len(model_df), int(model_df["observed"].sum()),
-        100 * model_df["observed"].mean(), aft.concordance_index_,
+        len(model_df),
+        int(model_df["observed"].sum()),
+        100 * model_df["observed"].mean(),
+        aft.concordance_index_,
     )
     return aft, d
 
@@ -353,7 +357,7 @@ def _survival_weights(aft, stint_meta: pd.DataFrame, laps: pd.DataFrame) -> pd.S
             sf = aft.predict_survival_function(x, times=uniq)
             lookup = dict(zip(uniq, sf.iloc[:, 0].reindex(uniq).to_numpy(float)))
             w = np.array([1.0 / max(lookup.get(a, 1.0), 1e-3) for a in ages])
-        except Exception:  # noqa: BLE001
+        except Exception:
             w = np.ones_like(ages)
         weights.loc[grp.index] = np.clip(w, 1.0, MAX_WEIGHT)
     return weights
@@ -377,7 +381,8 @@ def ipcw_fit(pace: pd.DataFrame, stints: pd.DataFrame) -> tuple[pd.DataFrame, ob
                         columns={"compound_rank_label": "rank_lab"}
                     ),
                     columns=["circuit", "rank_lab", "era"],
-                    drop_first=True, dtype=float,
+                    drop_first=True,
+                    dtype=float,
                 ).reset_index(drop=True),
             ],
             axis=1,
@@ -403,7 +408,7 @@ def ordering_check(table: pd.DataFrame, slope_col: str) -> dict:
     if p.empty:
         return {"status": "no_complete_circuits"}
     return {
-        "n_circuits": int(len(p)),
+        "n_circuits": len(p),
         "n_softest_faster_than_hardest": int((p["SOFTEST"] > p["HARDEST"]).sum()),
         "share_correct_ordering": float((p["SOFTEST"] > p["HARDEST"]).mean()),
         "n_monotone": int(((p["SOFTEST"] > p["MIDDLE"]) & (p["MIDDLE"] > p["HARDEST"])).sum()),
@@ -434,13 +439,15 @@ def compare(pace: pd.DataFrame, stints: pd.DataFrame, save: bool = True) -> dict
             twoway[key + ["slope_s_per_lap", "slope_se"]].rename(
                 columns={"slope_s_per_lap": "slope_twoway", "slope_se": "se_twoway"}
             ),
-            on=key, how="inner",
+            on=key,
+            how="inner",
         )
         .merge(
             corrected[key + ["slope_s_per_lap", "slope_se", "mean_weight"]].rename(
                 columns={"slope_s_per_lap": "slope_ipcw", "slope_se": "se_ipcw"}
             ),
-            on=key, how="inner",
+            on=key,
+            how="inner",
         )
     )
     merged["delta_twoway_vs_naive"] = merged["slope_twoway"] - merged["slope_naive"]
@@ -449,16 +456,10 @@ def compare(pace: pd.DataFrame, stints: pd.DataFrame, save: bool = True) -> dict
     merged["slope_s_per_lap_ipcw"] = merged["slope_ipcw"]
 
     summary = {
-        "n_cells": int(len(merged)),
-        "naive": ordering_check(
-            naive.rename(columns={"slope_s_per_lap": "s"}), "s"
-        ),
-        "twoway": ordering_check(
-            twoway.rename(columns={"slope_s_per_lap": "s"}), "s"
-        ),
-        "ipcw": ordering_check(
-            corrected.rename(columns={"slope_s_per_lap": "s"}), "s"
-        ),
+        "n_cells": len(merged),
+        "naive": ordering_check(naive.rename(columns={"slope_s_per_lap": "s"}), "s"),
+        "twoway": ordering_check(twoway.rename(columns={"slope_s_per_lap": "s"}), "s"),
+        "ipcw": ordering_check(corrected.rename(columns={"slope_s_per_lap": "s"}), "s"),
         "median_delta_ipcw_vs_twoway": float(merged["delta_ipcw_vs_twoway"].median()),
         "share_ipcw_increased": float((merged["delta_ipcw_vs_twoway"] > 0).mean()),
     }

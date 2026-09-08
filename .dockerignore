@@ -1,0 +1,12 @@
+.venv/
+data/raw/
+data/interim/
+.git/
+.github/
+tests/
+notebooks/
+.playwright-mcp/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/

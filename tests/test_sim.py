@@ -32,8 +32,12 @@ def _params(pass_p_base: float, **kw) -> CircuitParams:
 
 def _field(n=6, pace_spread=0.3):
     return [
-        Car(driver=f"D{i}", pace_offset_s=i * pace_spread, grid_position=i + 1,
-            strategy=Strategy(stops=((15, 2),), start_rank=0))
+        Car(
+            driver=f"D{i}",
+            pace_offset_s=i * pace_spread,
+            grid_position=i + 1,
+            strategy=Strategy(stops=((15, 2),), start_rank=0),
+        )
         for i in range(n)
     ]
 
@@ -48,10 +52,18 @@ def test_faster_car_wins_when_passing_is_easy():
 def test_blocking_preserves_grid_order_when_passing_is_impossible():
     """The core mechanic. If nobody can pass, a faster car stays stuck."""
     cars = [
-        Car(driver="slow_ahead", pace_offset_s=1.0, grid_position=1,
-            strategy=Strategy(stops=(), start_rank=2)),
-        Car(driver="fast_behind", pace_offset_s=0.0, grid_position=2,
-            strategy=Strategy(stops=(), start_rank=2)),
+        Car(
+            driver="slow_ahead",
+            pace_offset_s=1.0,
+            grid_position=1,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
+        Car(
+            driver="fast_behind",
+            pace_offset_s=0.0,
+            grid_position=2,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
     ]
     res = simulate(_params(1e-6), cars, n_sims=200, seed=2)
     stuck_rate = (res.finish_positions[:, 1] == 2).mean()
@@ -61,10 +73,18 @@ def test_blocking_preserves_grid_order_when_passing_is_impossible():
 def test_same_car_escapes_when_passing_is_easy():
     """Identical setup, easy circuit: now the faster car gets through."""
     cars = [
-        Car(driver="slow_ahead", pace_offset_s=1.0, grid_position=1,
-            strategy=Strategy(stops=(), start_rank=2)),
-        Car(driver="fast_behind", pace_offset_s=0.0, grid_position=2,
-            strategy=Strategy(stops=(), start_rank=2)),
+        Car(
+            driver="slow_ahead",
+            pace_offset_s=1.0,
+            grid_position=1,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
+        Car(
+            driver="fast_behind",
+            pace_offset_s=0.0,
+            grid_position=2,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
     ]
     res = simulate(_params(0.8), cars, n_sims=200, seed=3)
     assert (res.finish_positions[:, 1] == 1).mean() > 0.9
@@ -77,10 +97,18 @@ def test_track_position_value_is_circuit_dependent():
     fails, the simulator cannot express the finding it exists to produce.
     """
     cars = [
-        Car(driver="ahead", pace_offset_s=0.6, grid_position=1,
-            strategy=Strategy(stops=(), start_rank=2)),
-        Car(driver="behind", pace_offset_s=0.0, grid_position=2,
-            strategy=Strategy(stops=(), start_rank=2)),
+        Car(
+            driver="ahead",
+            pace_offset_s=0.6,
+            grid_position=1,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
+        Car(
+            driver="behind",
+            pace_offset_s=0.0,
+            grid_position=2,
+            strategy=Strategy(stops=(), start_rank=2),
+        ),
     ]
     hard = simulate(_params(0.01), cars, n_sims=300, seed=4)
     easy = simulate(_params(0.5), cars, n_sims=300, seed=4)
@@ -120,7 +148,9 @@ def test_seed_is_reproducible():
 def test_compare_strategies_holds_the_rest_of_the_field_fixed():
     cars = _field(n=5)
     out = compare_strategies(
-        _params(0.3), cars, focus_index=2,
+        _params(0.3),
+        cars,
+        focus_index=2,
         alternatives=[Strategy(stops=((12, 2),)), Strategy(stops=((20, 2),))],
         n_sims=120,
     )

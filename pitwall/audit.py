@@ -184,8 +184,10 @@ def audit_race(
         for cand in candidates:
             trial = list(field)
             trial[i] = Car(
-                driver=field[i].driver, pace_offset_s=field[i].pace_offset_s,
-                grid_position=field[i].grid_position, strategy=cand.strategy,
+                driver=field[i].driver,
+                pace_offset_s=field[i].pace_offset_s,
+                grid_position=field[i].grid_position,
+                strategy=cand.strategy,
                 team=field[i].team,
             )
             res = simulate(params, trial, n_sims=cfg.n_sims, seed=cfg.seed)
@@ -232,24 +234,20 @@ def sanity_gate(audit: pd.DataFrame) -> dict:
 
     failures = []
     if mean_gain > GATE_MAX_MEAN_GAIN_S:
-        failures.append(
-            f"mean gain {mean_gain:.2f}s exceeds {GATE_MAX_MEAN_GAIN_S}s"
-        )
+        failures.append(f"mean gain {mean_gain:.2f}s exceeds {GATE_MAX_MEAN_GAIN_S}s")
     if share_improved > GATE_MAX_SHARE_IMPROVED:
         failures.append(
             f"optimiser beats {share_improved:.0%} of car-races, "
             f"above the {GATE_MAX_SHARE_IMPROVED:.0%} threshold"
         )
     if max_gain > GATE_MAX_SINGLE_GAIN_S:
-        failures.append(
-            f"largest single gain {max_gain:.1f}s exceeds {GATE_MAX_SINGLE_GAIN_S}s"
-        )
+        failures.append(f"largest single gain {max_gain:.1f}s exceeds {GATE_MAX_SINGLE_GAIN_S}s")
 
     return {
         "status": "ok",
         "passed": len(failures) == 0,
         "failures": failures,
-        "n_car_races": int(len(audit)),
+        "n_car_races": len(audit),
         "n_races": int(audit["race_id"].nunique()),
         "mean_gain_s": mean_gain,
         "median_gain_s": float(g.median()),

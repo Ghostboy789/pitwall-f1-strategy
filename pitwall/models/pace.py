@@ -117,7 +117,9 @@ def prepare(pace: pd.DataFrame) -> pd.DataFrame:
     df["sess_time_c"] = (tsec - g.transform("mean")) / g.transform("std").replace(0, np.nan)
     # Curvature: evolution is concave (big early grip gain, then a plateau).
     df["sess_time_sq"] = df["sess_time_c"] ** 2
-    df["sess_time_sq"] = df["sess_time_sq"] - df.groupby("race_id")["sess_time_sq"].transform("mean")
+    df["sess_time_sq"] = df["sess_time_sq"] - df.groupby("race_id")["sess_time_sq"].transform(
+        "mean"
+    )
 
     df["dirty_air"] = pd.to_numeric(df["dirty_air_intensity"], errors="coerce").fillna(0.0)
     df["rank_lab"] = df["compound_rank_label"].astype(str)
@@ -155,7 +157,7 @@ def collinearity_report(d: pd.DataFrame) -> dict:
     return {
         "condition_number": cond,
         "corr": float(np.corrcoef(x[:, 0], x[:, 1])[0, 1]),
-        "n": int(len(x)),
+        "n": len(x),
     }
 
 
@@ -165,8 +167,11 @@ def fit_one_circuit(df: pd.DataFrame, circuit: str) -> dict | None:
     if len(d) < MIN_LAPS_FOR_CIRCUIT_FIT or d["race_id"].nunique() < MIN_RACES_FOR_CIRCUIT_FIT:
         log.info(
             "skip %-16s %d laps / %d races (need %d / %d)",
-            circuit, len(d), d["race_id"].nunique(),
-            MIN_LAPS_FOR_CIRCUIT_FIT, MIN_RACES_FOR_CIRCUIT_FIT,
+            circuit,
+            len(d),
+            d["race_id"].nunique(),
+            MIN_LAPS_FOR_CIRCUIT_FIT,
+            MIN_RACES_FOR_CIRCUIT_FIT,
         )
         return None
 
@@ -182,7 +187,7 @@ def fit_one_circuit(df: pd.DataFrame, circuit: str) -> dict | None:
             res = smf.mixedlm(formula, d, groups=d["race_id"]).fit(
                 method="lbfgs", maxiter=400, disp=False
             )
-    except Exception as exc:  # noqa: BLE001 - a circuit that will not fit is itself a result
+    except Exception as exc:
         log.warning("circuit %-16s failed: %s: %s", circuit, type(exc).__name__, exc)
         return None
 
@@ -193,13 +198,13 @@ def fit_one_circuit(df: pd.DataFrame, circuit: str) -> dict | None:
     # outcome (all races at this circuit behaved alike), not a failure.
     try:
         resid_sd = float(np.std(res.resid))
-    except Exception:  # noqa: BLE001
+    except Exception:
         resid_sd = np.nan
 
     ref = f"C(rank_lab, Treatment(reference='{RANK_REF}'))"
     out = {
         "circuit": circuit,
-        "n_laps": int(len(d)),
+        "n_laps": len(d),
         "n_races": int(d["race_id"].nunique()),
         "n_drivers": int(d["Driver"].nunique()),
         "eras": int(d["era"].nunique()),
@@ -240,7 +245,7 @@ def fit_one_circuit(df: pd.DataFrame, circuit: str) -> dict | None:
         cov = res.cov_params()
         v = cov.loc[base, base] + cov.loc[delta, delta] + 2 * cov.loc[base, delta]
         out["deg_softest_se"] = float(np.sqrt(max(v, 0.0)))
-    except Exception:  # noqa: BLE001 - compound absent at this circuit
+    except Exception:
         out["deg_softest_se"] = out["deg_hardest_se"]
     return out
 
@@ -256,8 +261,14 @@ def fit_all_circuits(pace: pd.DataFrame) -> pd.DataFrame:
         rows.append(r)
         log.info(
             "%-16s laps=%-6d races=%-3d fuel=%+.4f evo=%+.3f degH=%+.4f degS=%+.4f traffic=%+.3f %s",
-            circuit, r["n_laps"], r["n_races"], r["fuel"], r["evolution"],
-            r["deg_hardest"], r["deg_softest"], r["traffic"],
+            circuit,
+            r["n_laps"],
+            r["n_races"],
+            r["fuel"],
+            r["evolution"],
+            r["deg_hardest"],
+            r["deg_softest"],
+            r["traffic"],
             "" if r["fuel_evo_separable"] else "[combined]",
         )
     return pd.DataFrame(rows)
@@ -307,7 +318,12 @@ def pool_random_effects(
 
 
 POOLED_TERMS = (
-    "fuel", "evolution", "deg_hardest", "deg_softest", "deg_quad", "traffic",
+    "fuel",
+    "evolution",
+    "deg_hardest",
+    "deg_softest",
+    "deg_quad",
+    "traffic",
 )
 
 
@@ -385,7 +401,7 @@ def fuel_plausibility_check(circuit_fits: pd.DataFrame) -> dict:
     f = circuit_fits["fuel"].dropna()
     lo, hi = PHYSICAL_FUEL_S_PER_LAP
     return {
-        "n_circuits": int(len(f)),
+        "n_circuits": len(f),
         "median_s_per_lap": float(f.median()),
         "iqr_low": float(f.quantile(0.25)),
         "iqr_high": float(f.quantile(0.75)),
@@ -409,18 +425,16 @@ def fuel_scaling_check(circuit_fits: pd.DataFrame) -> dict:
     from pitwall.circuits import CIRCUIT_REF
 
     d = circuit_fits.copy()
-    d["lap_km"] = d["circuit"].map(
-        lambda c: CIRCUIT_REF[c].lap_km if c in CIRCUIT_REF else np.nan
-    )
+    d["lap_km"] = d["circuit"].map(lambda c: CIRCUIT_REF[c].lap_km if c in CIRCUIT_REF else np.nan)
     d = d.dropna(subset=["lap_km", "fuel"])
     if len(d) < 5:
-        return {"status": "insufficient_circuits", "n_circuits": int(len(d))}
+        return {"status": "insufficient_circuits", "n_circuits": len(d)}
 
     r, p = stats.pearsonr(d["lap_km"], d["fuel"])
     lr = stats.linregress(d["lap_km"], d["fuel"])
     return {
         "status": "ok",
-        "n_circuits": int(len(d)),
+        "n_circuits": len(d),
         "pearson_r": float(r),
         "p_value": float(p),
         "slope_s_per_lap_per_km": float(lr.slope),

@@ -72,10 +72,7 @@ def deterministic_cost(
     if any(n < MIN_STINT_LAPS for n in lengths):
         return np.inf, lengths
 
-    tyre = sum(
-        deg_by_rank.get(rank, 0.05) * n * (n + 1) / 2.0
-        for n, rank in zip(lengths, ranks)
-    )
+    tyre = sum(deg_by_rank.get(rank, 0.05) * n * (n + 1) / 2.0 for n, rank in zip(lengths, ranks))
     return tyre + len(stop_laps) * pit_loss_s, lengths
 
 
@@ -96,7 +93,9 @@ def enumerate_strategies(
     laps = params.race_laps
 
     for n_stops in range(1, max_stops + 1):
-        for stop_laps in itertools.combinations(range(MIN_STINT_LAPS, laps - MIN_STINT_LAPS + 1), n_stops):
+        for stop_laps in itertools.combinations(
+            range(MIN_STINT_LAPS, laps - MIN_STINT_LAPS + 1), n_stops
+        ):
             for ranks in itertools.product(available_ranks, repeat=n_stops + 1):
                 if require_two_compounds and len(set(ranks)) < 2:
                     continue
@@ -145,8 +144,11 @@ def optimise(
         trial = list(field)
         base = field[focus_index]
         trial[focus_index] = Car(
-            driver=base.driver, pace_offset_s=base.pace_offset_s,
-            grid_position=base.grid_position, strategy=cand.strategy, team=base.team,
+            driver=base.driver,
+            pace_offset_s=base.pace_offset_s,
+            grid_position=base.grid_position,
+            strategy=cand.strategy,
+            team=base.team,
         )
         res = simulate(params, trial, n_sims=n_sims, seed=seed)
         pos = res.finish_positions[:, focus_index]
@@ -190,7 +192,7 @@ def ranking_disagreement(opt: pd.DataFrame) -> dict:
     best_sim = opt.loc[opt["simulated_rank"].idxmin(), "strategy"]
     return {
         "status": "ok",
-        "n_candidates": int(len(opt)),
+        "n_candidates": len(opt),
         "spearman_rho": float(rho),
         "p_value": float(p),
         "best_deterministic": best_det,

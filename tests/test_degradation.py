@@ -24,8 +24,8 @@ def _synthetic_race(deg: float, fuel: float, n_cars: int = 12, seed: int = 0) ->
     rng = np.random.default_rng(seed)
     rows = []
     for car in range(n_cars):
-        pit = 15 + car % 9          # stops spread across laps 15-23
-        base = 90.0 + car * 0.15    # cars differ in pace
+        pit = 15 + car % 9  # stops spread across laps 15-23
+        base = 90.0 + car * 0.15  # cars differ in pace
         for lap in range(1, 51):
             age = lap if lap <= pit else lap - pit
             t = base + deg * age + fuel * (lap - 1) + rng.normal(0, 0.05)

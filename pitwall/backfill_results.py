@@ -50,7 +50,7 @@ def _needs_backfill(year: int, rnd: int) -> bool:
         return True
     try:
         r = pd.read_parquet(existing)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return True
     return "GridPosition" not in r.columns or r["GridPosition"].notna().sum() == 0
 
@@ -69,13 +69,15 @@ def fetch_one(year: int, rnd: int) -> pd.DataFrame | None:
             df["year"] = year
             df["round"] = rnd
             return df
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             msg = f"{type(exc).__name__}: {exc}"
             if "RateLimitExceeded" in type(exc).__name__ or "500 calls/h" in str(exc):
                 log.warning("rate limited at %s r%s; waiting 300s", year, rnd)
                 time.sleep(300)
                 continue
-            log.warning("attempt %d/%d failed for %s r%s: %s", attempt, MAX_ATTEMPTS, year, rnd, msg)
+            log.warning(
+                "attempt %d/%d failed for %s r%s: %s", attempt, MAX_ATTEMPTS, year, rnd, msg
+            )
             if attempt < MAX_ATTEMPTS:
                 time.sleep(3.0 * attempt)
     return None
@@ -88,8 +90,10 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)-7s %(message)s",
-        datefmt="%H:%M:%S", stream=sys.stdout,
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)-7s %(message)s",
+        datefmt="%H:%M:%S",
+        stream=sys.stdout,
     )
     setup_fastf1()
     OUT_DIR.mkdir(parents=True, exist_ok=True)

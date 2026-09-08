@@ -1,0 +1,24 @@
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "ARG", "PTH", "RUF"]
+ignore = [
+  "E501",    # long lines are the formatter's business
+  "B008",    # FastAPI puts calls in argument defaults by design
+  "B905",    # zip(strict=) adds noise to zips over provably equal lengths
+  "RUF001",  # ambiguous unicode in prose docstrings is deliberate
+  "RUF002",
+  "RUF003",
+  "RUF005",  # list concatenation reads better than unpacking for column lists
+  "RUF007",  # itertools.pairwise is not clearer here
+  "C408",    # dict(...) with keywords is more readable in test fixtures
+  "C416",
+  "UP031",   # %-format is fine in log-adjacent strings
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["ARG", "RUF059"]
+
+[format]
+quote-style = "double"

@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pit Wall — what track position is worth</title>
+<meta name="description" content="A Formula 1 race-strategy counterfactual engine. What track position is worth, in seconds, per circuit — with honest error bars.">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/pitwall.css">
+</head>
+<body>
+<div id="tip"></div>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">Pit Wall · Formula 1 strategy counterfactuals</div>
+  {% if headline %}
+  <h1>The same tyre advantage is worth<br>{{ "%.0f"|format(headline.ratio) }}&times; more at {{ headline.top_name }} than at&nbsp;{{ headline.bottom_name }}.</h1>
+  {% else %}
+  <h1>What track position is worth,<br>in seconds, per circuit.</h1>
+  {% endif %}
+  <p class="standfirst">
+    Almost every public F1 analysis answers <em>what happened</em>. This one answers what
+    <em>should</em> have happened, by how much, and with an error bar. Every number below
+    was computed from timing data — none are quoted.
+  </p>
+  <div class="scope">
+    <div><span class="n">{{ metrics.n_races }}</span><span class="l">races</span></div>
+    <div><span class="n">{{ metrics.n_circuits }}</span><span class="l">circuits</span></div>
+    <div><span class="n">{{ "{:,}".format(metrics.n_laps_modelled) }}</span><span class="l">laps modelled</span></div>
+    <div><span class="n">{{ "{:,}".format(metrics.n_opportunities) }}</span><span class="l">overtake attempts</span></div>
+    <div><span class="n">{{ metrics.n_drivers }}</span><span class="l">drivers</span></div>
+    <div><span class="n">2018–2026</span><span class="l">seasons</span></div>
+  </div>
+</header>
+
+<!-- ================= THE FINDING ================= -->
+<section>
+  <div class="kicker">The finding</div>
+  <h2>What one place on track costs, in seconds</h2>
+  <p class="lede">
+    A car half a second a lap quicker than the one ahead does not simply drive past. It waits.
+    How long it waits is a property of the circuit — and that wait, priced in seconds, is what
+    track position is worth. Where the bar is long, an undercut that gains a place is worth
+    keeping; where it is short, the place will come back anyway.
+  </p>
+
+  {% if focus and focus|length >= 2 %}
+  <div class="hero">
+    <span class="fig">{{ "%.1f"|format(focus[0].value_s) }}</span><span class="unit">s</span>
+    <span class="ci">at {{ focus[0].name }} · 95% CI {{ "%.1f"|format(focus[0].value_lo) }}–{{ "%.1f"|format(focus[0].value_hi) }}s · {{ focus[0].n_races }} races</span>
+  </div>
+  {% endif %}
+
+  <div class="card" style="margin-top:18px">
+    <div id="tp-chart"></div>
+    <p class="note">
+      Scenario held identical at every circuit: the following car is 0.5 s/lap quicker, one second
+      behind, inside DRS range, at mid-race with 25 laps to run. Bars in blue are the four circuits
+      the analysis is framed around. Whiskers are 95% intervals from a cluster bootstrap over races,
+      stratified by circuit. A bar at the ceiling means the car never gets past — it is stuck to the flag.
+    </p>
+    <details class="table-view">
+      <summary>Show the numbers as a table</summary>
+      <table>
+        <thead><tr><th>Circuit</th><th>Races</th><th>Pass chance / lap</th><th>Cost (s)</th><th>95% CI</th></tr></thead>
+        <tbody>
+        {% for r in trackposition %}
+          <tr>
+            <td{% if r.is_focus %} class="strong"{% endif %}>{{ r.name }}</td>
+            <td>{{ r.n_races }}</td>
+            <td>{{ "%.1f"|format(r.p_pass_per_lap * 100) }}%</td>
+            <td class="strong">{{ "%.1f"|format(r.value_s) }}</td>
+            <td>{{ "%.1f"|format(r.value_lo) }}–{{ "%.1f"|format(r.value_hi) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </details>
+  </div>
+</section>
+
+<!-- ================= CENSORING ================= -->
+<section>
+  <div class="kicker">The hard part</div>
+  <h2>Tyre degradation is measured from data that systematically hides it</h2>
+  <p class="lede">
+    Teams pit when the tyre is finished, so the worst of every degradation curve is never observed —
+    and it is missing non-randomly, because a tyre going off early gets changed early. Worse, teams
+    choose the <em>harder</em> compound for exactly the stints where degradation will be worst, so the
+    compounds are never seen under equal conditions. Uncorrected, the data says harder tyres wear
+    faster than softer ones, which is backwards.
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="legend">
+        <span><i style="background:var(--s2)"></i>Naive</span>
+        <span><i style="background:var(--s3)"></i>Two-way fixed effects</span>
+        <span><i style="background:var(--s1)"></i>+ censoring correction</span>
+      </div>
+      <div id="deg-chart"></div>
+      <p class="note">
+        Median degradation across circuits, by the compound's rank <em>within its own event</em> —
+        the only comparison the relative Soft/Medium/Hard labels support. The corrected estimator
+        recovers an ordering it was never told about: softer tyres degrade faster.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:640">What each correction bought</h3>
+      {% if deg_ordering %}
+      <table>
+        <thead><tr><th>Estimator</th><th>Correct order</th><th>Impossible cells</th></tr></thead>
+        <tbody>
+        {% for key, label in [("naive", "Naive"), ("twoway", "Two-way FE"), ("ipcw", "+ censoring")] %}
+          {% set o = deg_ordering[key] %}
+          <tr>
+            <td{% if key == "ipcw" %} class="strong"{% endif %}>{{ label }}</td>
+            <td{% if key == "ipcw" %} class="strong"{% endif %}>{{ o.n_softest_faster_than_hardest }} / {{ o.n_circuits }}</td>
+            <td class="strong" style="color:{% if key == 'naive' %}var(--critical){% elif key == 'ipcw' %}var(--good){% else %}var(--ink-2){% endif %}">
+              {{ o.n_negative_cells }} / {{ o.n_cells }}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <p class="note">
+        “Impossible cells” are circuit-compound combinations where the fitted degradation is
+        <em>negative</em> — tyres getting quicker as they age. Driving that count down is the
+        clearest evidence the corrections are doing real work.
+      </p>
+      {% if selection and selection.status == 'ok' %}
+      <p class="note">
+        The selection is measured, not assumed: a stint's degradation over its first five laps
+        predicts how soon it was pitted
+        (r = {{ "%.3f"|format(selection.pearson_r) }},
+        p {% if selection.pearson_p < 1e-9 %}&lt; 10&#8315;&#8313;{% else %}= {{ "%.2g"|format(selection.pearson_p) }}{% endif %},
+        n = {{ "{:,}".format(selection.n_stints|int) }} stints).
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= VALIDATION ================= -->
+<section>
+  <div class="kicker">Validation</div>
+  <h2>Does the model deserve to be believed?</h2>
+  <p class="lede">
+    The overtaking model outputs probabilities, so being right on average is not enough — it has to be
+    right at every confidence level. And an optimiser that claims to beat professional strategists by
+    a wide margin is broken, not brilliant.
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:15px;font-weight:640">When it says 30%, it happens 30% of the time</h3>
+      <p class="note" style="margin:0 0 10px">
+        Out-of-fold predictions, split by race so no race appears in both training and test.
+      </p>
+      <div id="rel-chart"></div>
+      <p class="note">
+        Dashed line is perfect calibration. AUC {{ "%.3f"|format(metrics.overtaking_auc) }} ·
+        Brier {{ "%.4f"|format(metrics.overtaking_brier) }} ·
+        expected calibration error {{ "%.4f"|format(metrics.overtaking_ece) }}.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:15px;font-weight:640">The sanity gate</h3>
+      {% if gate %}
+      <div class="verdict {{ 'pass' if gate.passed else 'fail' }}">
+        <span class="dot"></span>
+        <div>
+          <div class="t">{{ "PASSED" if gate.passed else "FAILED" }}</div>
+          <div class="d">
+            {% if gate.passed %}
+              The optimiser beats real strategy by {{ "%.2f"|format(gate.mean_gain_s) }}s on average
+              across {{ gate.n_car_races }} car-races — small, as it must be.
+            {% else %}
+              {{ gate.failures|join("; ") }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <table style="margin-top:16px">
+        <tbody>
+          <tr><td>Mean gain over real strategy</td><td class="strong">{{ "%.2f"|format(gate.mean_gain_s) }}s</td></tr>
+          <tr><td>Median gain</td><td>{{ "%.2f"|format(gate.median_gain_s) }}s</td></tr>
+          <tr><td>Car-races the optimiser beats</td><td>{{ "%.0f"|format(gate.share_improved * 100) }}%</td></tr>
+          <tr><td>Within 1s of optimal</td><td>{{ "%.0f"|format(gate.share_within_1s_of_optimal * 100) }}%</td></tr>
+          <tr><td>Largest single gain</td><td>{{ "%.1f"|format(gate.max_gain_s) }}s</td></tr>
+        </tbody>
+      </table>
+      {% else %}
+      <p class="note">Audit not yet run for this build. Run <code>python -m scripts.run_audit</code>.</p>
+      {% endif %}
+      <p class="note">
+        Thresholds were fixed in <code>VALIDATION_PLAN.md</code> before any of this was computed:
+        a mean gain above 2.0s, beating more than 70% of car-races, or any single gain above 30s
+        declares the model broken.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SIMULATOR ================= -->
+<section>
+  <div class="kicker">Try it</div>
+  <h2>Change the strategy, re-run the race</h2>
+  <p class="lede">
+    Pick a circuit and a set of stops. The race is simulated {{ 600 }} times against a representative
+    field, with degradation, fuel burn, pit loss, safety cars and — crucially — cars that cannot
+    simply drive past each other.
+  </p>
+
+  <div class="card">
+    <div class="controls">
+      <div class="field">
+        <label for="sim-circuit">Circuit</label>
+        <select id="sim-circuit">
+          {% for c in circuits %}<option value="{{ c.key }}">{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="sim-grid">Start position</label>
+        <input type="number" id="sim-grid" value="5" min="1" max="12">
+      </div>
+      <div class="field">
+        <label for="sim-start-rank">Starting tyre</label>
+        <select id="sim-start-rank">
+          <option value="0">Softest available</option>
+          <option value="1" selected>Middle</option>
+          <option value="2">Hardest available</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="sim-run">Run 600 races</button>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="sim-best" class="ghost">Show the optimiser's pick</button>
+      </div>
+    </div>
+
+    <div id="sim-stops"></div>
+    <button id="sim-add" class="ghost" style="margin:4px 0 20px">+ add a stop</button>
+
+    <div id="sim-out" style="display:none">
+      <div class="result-figs">
+        <div><span class="n" id="r-mean">–</span><span class="l">mean finish</span></div>
+        <div><span class="n" id="r-range">–</span><span class="l">90% of races</span></div>
+        <div><span class="n" id="r-win">–</span><span class="l">win rate</span></div>
+        <div><span class="n" id="r-pod">–</span><span class="l">podium rate</span></div>
+        <div><span class="n" id="r-gap">–</span><span class="l">mean gap to winner</span></div>
+      </div>
+      <div id="sim-chart"></div>
+      <p class="note" id="sim-note"></p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Built from FastF1 timing data for {{ metrics.n_races }} races.
+    {{ metrics.gates_passed }}/{{ metrics.gates_total }} data-quality gates pass.
+    Method, limitations and every failure are in <code>METHODOLOGY.md</code>;
+    the validation plan was committed before any result was computed.
+  </p>
+</footer>
+
+</div>
+
+<script src="/static/pitwall.js"></script>
+<script>
+const TP  = {{ trackposition|tojson }};
+const DEG = {{ degradation|tojson }};
+const REL = {{ reliability|tojson }};
+
+/* Headline chart */
+PitWall.drawTrackPosition(document.getElementById("tp-chart"), TP);
+
+/* Degradation: median by compound rank across circuits */
+(function () {
+  const order = [["SOFTEST","Softest available"],["MIDDLE","Middle"],["HARDEST","Hardest available"]];
+  const median = a => { const s=a.filter(v=>v!=null&&!Number.isNaN(v)).sort((x,y)=>x-y);
+    return s.length ? (s.length%2 ? s[(s.length-1)/2] : (s[s.length/2-1]+s[s.length/2])/2) : null; };
+  const rows = order.map(([k,label]) => {
+    const sub = DEG.filter(d => d.compound_rank_label === k);
+    return { label,
+      slope_naive:  median(sub.map(d => d.slope_naive)),
+      slope_twoway: median(sub.map(d => d.slope_twoway)),
+      slope_ipcw:   median(sub.map(d => d.slope_ipcw)) };
+  });
+  PitWall.drawDegradation(document.getElementById("deg-chart"), rows);
+})();
+
+/* Reliability */
+if (REL && REL.length) PitWall.drawReliability(document.getElementById("rel-chart"), REL);
+
+/* ---------- simulator ---------- */
+const stopsEl = document.getElementById("sim-stops");
+let stops = [[20, 2]];
+
+function renderStops() {
+  stopsEl.innerHTML = "";
+  stops.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "stop-row";
+    row.innerHTML = `
+      <span class="idx">Stop ${i + 1}</span>
+      <label class="l" style="color:var(--muted);font-size:12px">lap</label>
+      <input type="number" value="${s[0]}" min="1" max="99" data-i="${i}" data-k="0" style="width:80px">
+      <label class="l" style="color:var(--muted);font-size:12px">fit</label>
+      <select data-i="${i}" data-k="1">
+        <option value="0"${s[1]===0?" selected":""}>Softest</option>
+        <option value="1"${s[1]===1?" selected":""}>Middle</option>
+        <option value="2"${s[1]===2?" selected":""}>Hardest</option>
+      </select>
+      <button class="ghost" data-rm="${i}" style="padding:6px 11px">Remove</button>`;
+    stopsEl.appendChild(row);
+  });
+  stopsEl.querySelectorAll("input,select").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const i = +e.target.dataset.i, k = +e.target.dataset.k;
+      stops[i][k] = parseInt(e.target.value, 10);
+    });
+  });
+  stopsEl.querySelectorAll("[data-rm]").forEach(b => {
+    b.addEventListener("click", e => { stops.splice(+e.target.dataset.rm, 1); renderStops(); });
+  });
+}
+renderStops();
+
+document.getElementById("sim-add").addEventListener("click", () => {
+  stops.push([Math.min(40, 15 + stops.length * 15), 2]); renderStops();
+});
+
+async function run() {
+  const btn = document.getElementById("sim-run");
+  btn.disabled = true; btn.textContent = "Simulating…";
+  try {
+    const body = {
+      circuit: document.getElementById("sim-circuit").value,
+      stops: stops,
+      start_rank: +document.getElementById("sim-start-rank").value,
+      grid_position: +document.getElementById("sim-grid").value,
+      n_sims: 600, field_size: 12,
+    };
+    const r = await fetch("/api/simulate", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (!r.ok) { const e = await r.json(); alert(e.detail || "Simulation failed"); return; }
+    const d = await r.json();
+    document.getElementById("sim-out").style.display = "";
+    document.getElementById("r-mean").textContent  = "P" + d.mean_position.toFixed(1);
+    document.getElementById("r-range").textContent = "P" + d.p05_position.toFixed(0) + "–P" + d.p95_position.toFixed(0);
+    document.getElementById("r-win").textContent   = (d.win_rate * 100).toFixed(1) + "%";
+    document.getElementById("r-pod").textContent   = (d.podium_rate * 100).toFixed(0) + "%";
+    document.getElementById("r-gap").textContent   = d.mean_gap_s.toFixed(1) + "s";
+    PitWall.drawHistogram(document.getElementById("sim-chart"), d.position_histogram, d.n_sims);
+    document.getElementById("sim-note").textContent =
+      `${d.name}, ${d.race_laps} laps, starting P${d.grid_position}. ` +
+      `${d.mean_cautions.toFixed(2)} safety cars per race on average. ` +
+      `Distribution over ${d.n_sims} simulated races — never a single deterministic result.`;
+  } finally {
+    btn.disabled = false; btn.textContent = "Run 600 races";
+  }
+}
+document.getElementById("sim-run").addEventListener("click", run);
+
+document.getElementById("sim-best").addEventListener("click", async e => {
+  e.target.disabled = true; e.target.textContent = "Searching…";
+  try {
+    const r = await fetch("/api/optimise", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        circuit: document.getElementById("sim-circuit").value,
+        grid_position: +document.getElementById("sim-grid").value,
+        field_size: 12, n_sims: 400, stops: [],
+      }),
+    });
+    const d = await r.json();
+    if (d.candidates && d.candidates.length) {
+      const best = d.candidates[0];
+      stops = best.stops.map(s => [s[0], s[1]]);
+      document.getElementById("sim-start-rank").value = String(best.start_rank);
+      renderStops(); run();
+    }
+  } finally {
+    e.target.disabled = false; e.target.textContent = "Show the optimiser's pick";
+  }
+});
+
+let rt;
+window.addEventListener("resize", () => {
+  clearTimeout(rt);
+  rt = setTimeout(() => {
+    PitWall.drawTrackPosition(document.getElementById("tp-chart"), TP);
+    if (REL && REL.length) PitWall.drawReliability(document.getElementById("rel-chart"), REL);
+  }, 160);
+});
+</script>
+</body>
+</html>

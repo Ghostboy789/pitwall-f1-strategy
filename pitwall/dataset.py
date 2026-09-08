@@ -32,9 +32,7 @@ def load_raw(kind: str = "laps") -> pd.DataFrame:
     d = config.RAW / kind
     files = sorted(d.glob("*.parquet"))
     if not files:
-        raise FileNotFoundError(
-            f"no {kind} parquet in {d}. Run `python -m pitwall.ingest` first."
-        )
+        raise FileNotFoundError(f"no {kind} parquet in {d}. Run `python -m pitwall.ingest` first.")
     frames = [pd.read_parquet(f) for f in files]
     out = pd.concat(frames, ignore_index=True)
     log.info("loaded %s: %d rows from %d sessions", kind, len(out), len(files))
@@ -45,8 +43,7 @@ def add_identity(laps: pd.DataFrame) -> pd.DataFrame:
     """Add canonical circuit key and a stable per-race / per-car identifier."""
     out = laps.copy()
     out["circuit"] = [
-        canonical_circuit(loc, evt)
-        for loc, evt in zip(out["location"], out["event_name"])
+        canonical_circuit(loc, evt) for loc, evt in zip(out["location"], out["event_name"])
     ]
     out["race_id"] = out["year"].astype(str) + "_" + out["round"].astype(str).str.zfill(2)
     out["car_id"] = out["race_id"] + "_" + out["Driver"].astype(str)
@@ -95,7 +92,11 @@ def add_race_features(laps: pd.DataFrame) -> pd.DataFrame:
     comp = out["Compound"].astype(str).str.upper()
     out["Compound"] = comp
     out["is_wet_tyre"] = comp.isin(config.WET_LABELS)
-    out["valid_compound"] = ~comp.isin([c.upper() for c in config.INVALID_COMPOUNDS if c]) & comp.ne("NAN") & comp.ne("NONE")
+    out["valid_compound"] = (
+        ~comp.isin([c.upper() for c in config.INVALID_COMPOUNDS if c])
+        & comp.ne("NAN")
+        & comp.ne("NONE")
+    )
 
     return out
 
@@ -162,7 +163,10 @@ def clean_for_pace(laps: pd.DataFrame) -> pd.DataFrame:
     out = out[keep].copy()
     log.info(
         "pace filter: %d -> %d laps (%.1f%% retained); removed by rule: %s",
-        n0, len(out), 100 * len(out) / max(n0, 1), report,
+        n0,
+        len(out),
+        100 * len(out) / max(n0, 1),
+        report,
     )
     out.attrs["filter_report"] = report
     out.attrs["n_before_filter"] = n0

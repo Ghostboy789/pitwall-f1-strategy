@@ -57,13 +57,13 @@ log = logging.getLogger("pitwall.trackposition")
 # results were computed. A meaningful but not overwhelming pace advantage, a
 # car actively attacking within DRS range, at mid-race distance.
 SCENARIO = {
-    "pace_delta_s": -0.5,      # follower is 0.5 s/lap faster (negative = quicker)
-    "gap_s": 1.0,              # within DRS range, actively attacking
+    "pace_delta_s": -0.5,  # follower is 0.5 s/lap faster (negative = quicker)
+    "gap_s": 1.0,  # within DRS range, actively attacking
     "drs_available": 1,
-    "tyre_age_delta": -10.0,   # fresher tyre, the usual reason for the advantage
+    "tyre_age_delta": -10.0,  # fresher tyre, the usual reason for the advantage
     "compound_rank_delta": -1.0,
     "lap_progress": 0.5,
-    "position": 8,             # midfield, where most racing happens
+    "position": 8,  # midfield, where most racing happens
 }
 
 DEFAULT_LAPS_REMAINING = 25
@@ -71,8 +71,9 @@ MIN_RACES_FOR_ESTIMATE = 2
 N_BOOTSTRAP = 120
 
 
-def scenario_frame(circuits: list[str], laps_remaining: int = DEFAULT_LAPS_REMAINING,
-                   **overrides) -> pd.DataFrame:
+def scenario_frame(
+    circuits: list[str], laps_remaining: int = DEFAULT_LAPS_REMAINING, **overrides
+) -> pd.DataFrame:
     """One row per circuit, all at the identical standard scenario."""
     from pitwall.circuits import CIRCUIT_REF
 
@@ -126,8 +127,7 @@ def estimate(
     circuits = sorted(counts[counts >= MIN_RACES_FOR_ESTIMATE].index)
     dropped = sorted(set(counts.index) - set(circuits))
     if dropped:
-        log.info("circuits excluded for having < %d races: %s",
-                 MIN_RACES_FOR_ESTIMATE, dropped)
+        log.info("circuits excluded for having < %d races: %s", MIN_RACES_FOR_ESTIMATE, dropped)
 
     scen = scenario_frame(circuits, laps_remaining)
     point_p = _fit_predict(d, scen, seed)
@@ -159,7 +159,7 @@ def estimate(
             continue
         try:
             boot[b] = _fit_predict(sample, scen, seed + b)
-        except Exception:  # noqa: BLE001 - a degenerate resample is not a failure
+        except Exception:
             continue
         if (b + 1) % 20 == 0:
             log.info("bootstrap %d/%d", b + 1, n_boot)
@@ -170,7 +170,9 @@ def estimate(
             "circuit": circuits,
             "n_races": [int(counts[c]) for c in circuits],
             "n_opportunities": [int((d["circuit"] == c).sum()) for c in circuits],
-            "observed_pass_rate": [float(d.loc[d["circuit"] == c, "passed"].mean()) for c in circuits],
+            "observed_pass_rate": [
+                float(d.loc[d["circuit"] == c, "passed"].mean()) for c in circuits
+            ],
             "p_pass_per_lap": point_p,
             "value_s": value_from_p(point_p, delta, laps_remaining),
             # Uncapped, so the ceiling is visible rather than silent. Where
@@ -209,9 +211,12 @@ def separation_test(est: pd.DataFrame, a: str, b: str) -> dict:
     ra, rb = ra.iloc[0], rb.iloc[0]
     overlap = not (ra["value_lo"] > rb["value_hi"] or rb["value_lo"] > ra["value_hi"])
     return {
-        "a": a, "b": b,
-        "value_a": float(ra["value_s"]), "ci_a": (float(ra["value_lo"]), float(ra["value_hi"])),
-        "value_b": float(rb["value_s"]), "ci_b": (float(rb["value_lo"]), float(rb["value_hi"])),
+        "a": a,
+        "b": b,
+        "value_a": float(ra["value_s"]),
+        "ci_a": (float(ra["value_lo"]), float(ra["value_hi"])),
+        "value_b": float(rb["value_s"]),
+        "ci_b": (float(rb["value_lo"]), float(rb["value_hi"])),
         "ratio": float(ra["value_s"] / rb["value_s"]) if rb["value_s"] else np.nan,
         "intervals_overlap": bool(overlap),
         "distinguishable": bool(not overlap),

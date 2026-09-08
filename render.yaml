@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pitwall-f1-strategy
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"

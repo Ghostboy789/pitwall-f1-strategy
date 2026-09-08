@@ -87,9 +87,7 @@ class CircuitParams:
         ``pass_p_base``, which comes straight from the hierarchical model.
         """
         base = np.clip(self.pass_p_base, 1e-4, 0.95)
-        logit = np.log(base / (1 - base)) + self.pass_p_per_s * np.maximum(
-            pace_advantage_s, 0.0
-        )
+        logit = np.log(base / (1 - base)) + self.pass_p_per_s * np.maximum(pace_advantage_s, 0.0)
         return 1.0 / (1.0 + np.exp(-logit))
 
 
@@ -108,9 +106,8 @@ class Strategy:
         return rank
 
     def __str__(self) -> str:
-        return "start-r%d " % self.start_rank + " ".join(
-            f"L{l}->r{r}" for l, r in self.stops
-        )
+        plan = " ".join(f"L{lap}->r{rank}" for lap, rank in self.stops)
+        return f"start-r{self.start_rank} {plan}".strip()
 
 
 @dataclass
@@ -128,10 +125,10 @@ class Car:
 class RaceResult:
     """Per-simulation outcome, plus the inputs that produced it."""
 
-    finish_positions: np.ndarray   # (n_sims, n_cars)
-    finish_times: np.ndarray       # (n_sims, n_cars) cumulative seconds
-    gaps_to_winner: np.ndarray     # (n_sims, n_cars)
-    n_cautions: np.ndarray         # (n_sims,)
+    finish_positions: np.ndarray  # (n_sims, n_cars)
+    finish_times: np.ndarray  # (n_sims, n_cars) cumulative seconds
+    gaps_to_winner: np.ndarray  # (n_sims, n_cars)
+    n_cautions: np.ndarray  # (n_sims,)
     cars: list[Car] = field(default_factory=list)
 
     def summary(self) -> pd.DataFrame:
@@ -222,7 +219,7 @@ def simulate(
         lap_time = np.where(under_sc[:, None], lap_time * params.sc_lap_multiplier, lap_time)
 
         # --- pit stops -----------------------------------------------------
-        for i, car in enumerate(cars):
+        for i in range(n_cars):
             if lap in stop_lap[i]:
                 cost = np.where(
                     under_sc, params.pit_loss_s * params.sc_pit_loss_factor, params.pit_loss_s
@@ -258,7 +255,7 @@ def simulate(
             # How much quicker the follower was over this lap.
             advantage = lap_time[rows, ahead] - lap_time[rows, behind]
             p = params.pass_probability(advantage)
-            p = np.where(under_sc, 0.0, p)   # nobody overtakes under caution
+            p = np.where(under_sc, 0.0, p)  # nobody overtakes under caution
             got_through = rng.random(n_sims) < p
 
             blocked = caught & ~got_through

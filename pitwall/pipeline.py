@@ -17,11 +17,9 @@ import logging
 import sys
 import time
 
-import numpy as np
 import pandas as pd
 
 from pitwall import compounds, config, dataset, quality, trackposition
-from pitwall.circuits import CIRCUIT_REF
 from pitwall.models import degradation, overtaking, pace, raceparams
 from pitwall.sim import CircuitParams
 
@@ -59,7 +57,9 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
     stints_ok = stints[stints["race_id"].isin(keep)]
     log.info(
         "strategy modelling uses %d of %d races (%d laps)",
-        len(keep), exclusions["race_id"].nunique(), len(pace_ok),
+        len(keep),
+        exclusions["race_id"].nunique(),
+        len(pace_ok),
     )
 
     log.info("stage 3/8: lap-time decomposition")
@@ -67,6 +67,17 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
 
     log.info("stage 4/8: degradation, naive vs censoring-corrected")
     out["degradation"] = degradation.compare(pace_ok, stints_ok, save=save)
+    if save:
+        # The ordering check drives a table on the dashboard, so it is
+        # persisted rather than recomputed there - no user-facing number is
+        # allowed to be typed in by hand.
+        (config.MODELS_OUT / "degradation_ordering.json").write_text(
+            json.dumps(
+                {k: out["degradation"]["summary"][k] for k in ("naive", "twoway", "ipcw")},
+                indent=2,
+                default=float,
+            )
+        )
 
     log.info("stage 5/8: pit loss and caution hazard")
     ts = dataset.load_raw("track_status")
@@ -102,20 +113,20 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
     metrics = {
         "n_races": int(laps["race_id"].nunique()),
         "n_races_used_for_strategy": len(keep),
-        "n_laps_raw": int(len(laps)),
-        "n_laps_modelled": int(len(pace_ok)),
+        "n_laps_raw": len(laps),
+        "n_laps_modelled": len(pace_ok),
         "n_circuits": int(laps["circuit"].nunique()),
         "n_drivers": int(laps["Driver"].nunique()),
         "n_teams": int(laps["Team"].nunique()),
-        "n_stints": int(len(stints)),
+        "n_stints": len(stints),
         "share_stints_censored": float(1 - stints["event_observed"].mean()),
-        "n_opportunities": int(len(opps)),
+        "n_opportunities": len(opps),
         "n_passes": int(opps["passed"].sum()),
         "overtaking_auc": float(fit["results"][best]["auc"]),
         "overtaking_brier": float(fit["results"][best]["brier"]),
         "overtaking_ece": float(rel.attrs["ece"]),
         "gates_passed": int(gates["passed"].sum()),
-        "gates_total": int(len(gates)),
+        "gates_total": len(gates),
         "seconds_elapsed": round(time.time() - t0, 1),
     }
     out["metrics"] = metrics
@@ -196,9 +207,7 @@ def load_artifacts() -> dict:
     m = config.MODELS_OUT
     # `dataset.build` persists laps before compound ranking is applied, so the
     # rank is recomputed here rather than stored twice and allowed to drift.
-    laps = compounds.add_relative_hardness(
-        pd.read_parquet(config.PROCESSED / "laps_all.parquet")
-    )
+    laps = compounds.add_relative_hardness(pd.read_parquet(config.PROCESSED / "laps_all.parquet"))
     med = (
         laps.assign(_t=pd.to_numeric(laps["LapTime"], errors="coerce"))
         .query("is_green")
@@ -226,8 +235,10 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)-7s %(message)s",
-        datefmt="%H:%M:%S", stream=sys.stdout,
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)-7s %(message)s",
+        datefmt="%H:%M:%S",
+        stream=sys.stdout,
     )
     build_all(n_boot=args.bootstrap, save=not args.no_save)
     return 0

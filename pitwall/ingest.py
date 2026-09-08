@@ -17,7 +17,7 @@ import logging
 import sys
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -141,7 +141,7 @@ class SessionRecord:
     has_tyrelife: int = 0
     attempts: int = 0
     ingested_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
+        default_factory=lambda: datetime.now(UTC).isoformat(timespec="seconds")
     )
 
 
@@ -160,7 +160,7 @@ def enumerate_races(seasons=config.SEASONS) -> pd.DataFrame:
     for year in seasons:
         try:
             sched = fastf1.get_event_schedule(year, include_testing=False)
-        except Exception as exc:  # noqa: BLE001 - a missing season must not kill the run
+        except Exception as exc:
             log.error("schedule %s failed: %s", year, exc)
             continue
         sched = sched[sched["RoundNumber"] >= 1]
@@ -204,7 +204,7 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
             laps = pd.read_parquet(paths["laps"])
             rec.n_laps = len(laps)
             rec.n_drivers = int(laps["Driver"].nunique()) if "Driver" in laps else 0
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         return rec
 
@@ -253,14 +253,14 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
 
             # Ancillary tables. A failure here must not lose the laps.
             getters = {
-                "weather": lambda: ses.weather_data,
-                "track_status": lambda: ses.track_status,
-                "results": lambda: ses.results,
-                "race_control": lambda: ses.race_control_messages,
+                "weather": "weather_data",
+                "track_status": "track_status",
+                "results": "results",
+                "race_control": "race_control_messages",
             }
-            for kind, getter in getters.items():
+            for kind, attr in getters.items():
                 try:
-                    tbl = getter()
+                    tbl = getattr(ses, attr)
                     if tbl is None or len(tbl) == 0:
                         continue
                     tbl = timedeltas_to_seconds(pd.DataFrame(tbl))
@@ -268,17 +268,21 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
                     tbl["round"] = rec.round
                     tbl.to_parquet(paths[kind], index=False)
                     setattr(rec, f"n_{kind}", len(tbl))
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.warning(
                         "%s r%s %s: %s table failed: %s",
-                        rec.year, rec.round, rec.event_name, kind, exc,
+                        rec.year,
+                        rec.round,
+                        rec.event_name,
+                        kind,
+                        exc,
                     )
 
             rec.status = "ok"
             rec.error = ""
             return rec
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             last_exc = f"{type(exc).__name__}: {exc}"
 
             if _is_rate_limit(exc):
@@ -292,15 +296,23 @@ def ingest_session(rec: SessionRecord, force: bool = False) -> SessionRecord:
                     return rec
                 log.warning(
                     "rate limited on %s r%s; waiting %.0fs (wait %d/%d)",
-                    rec.year, rec.round, RATE_LIMIT_SLEEP_S,
-                    rate_limit_waits, MAX_RATE_LIMIT_WAITS,
+                    rec.year,
+                    rec.round,
+                    RATE_LIMIT_SLEEP_S,
+                    rate_limit_waits,
+                    MAX_RATE_LIMIT_WAITS,
                 )
                 time.sleep(RATE_LIMIT_SLEEP_S)
                 continue
 
             log.warning(
                 "attempt %s/%s failed for %s r%s %s: %s",
-                attempt, MAX_ATTEMPTS, rec.year, rec.round, rec.event_name, last_exc,
+                attempt,
+                MAX_ATTEMPTS,
+                rec.year,
+                rec.round,
+                rec.event_name,
+                last_exc,
             )
             if attempt < MAX_ATTEMPTS:
                 time.sleep(2.0 * attempt)
@@ -393,8 +405,15 @@ def main(argv: list[str] | None = None) -> int:
         n += 1
         log.info(
             "[%3d] %s r%-2s %-30s %-7s laps=%-5s drv=%-3s %5.1fs %s",
-            n, rec.year, rec.round, rec.event_name[:30], rec.status,
-            rec.n_laps, rec.n_drivers, time.time() - t0, rec.error[:70],
+            n,
+            rec.year,
+            rec.round,
+            rec.event_name[:30],
+            rec.status,
+            rec.n_laps,
+            rec.n_drivers,
+            time.time() - t0,
+            rec.error[:70],
         )
         records.append(asdict(rec))
         # Write after every session so a crash never loses the manifest.

@@ -115,10 +115,10 @@ INVALID_COMPOUNDS = ("nan", "NAN", "UNKNOWN", "TEST_UNKNOWN", "", None)
 # --------------------------------------------------------------------------
 # Applied mechanically in pitwall/quality.py. Chosen before looking at results.
 
-MIN_LAP_TIME_S = 50.0     # no F1 circuit has a sub-50s racing lap
-MAX_LAP_TIME_S = 400.0    # beyond this it is a red-flag crawl, not a racing lap
-MIN_GREEN_LAPS_FOR_RACE = 20   # see EXCLUSION RULE in VALIDATION_PLAN.md
-MIN_STINT_LAPS_FOR_DEG = 4     # below this a degradation slope is not identified
+MIN_LAP_TIME_S = 50.0  # no F1 circuit has a sub-50s racing lap
+MAX_LAP_TIME_S = 400.0  # beyond this it is a red-flag crawl, not a racing lap
+MIN_GREEN_LAPS_FOR_RACE = 20  # see EXCLUSION RULE in VALIDATION_PLAN.md
+MIN_STINT_LAPS_FOR_DEG = 4  # below this a degradation slope is not identified
 
 # Race classified as strategically destroyed if a red flag falls this early,
 # because the free tyre change removes the strategic premise entirely.

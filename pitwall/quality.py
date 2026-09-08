@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 
-import numpy as np
 import pandas as pd
 
 from pitwall import config
@@ -68,10 +67,17 @@ def run_gates(laps: pd.DataFrame) -> pd.DataFrame:
 
     # Tyre age resets at a stint boundary (new stint starts younger than the
     # previous stint ended), unless the car took a used set.
-    firsts = d.groupby("stint_id").agg(
-        car_id=("car_id", "first"), stint=("Stint", "first"),
-        start_age=("TyreLife", "min"), end_age=("TyreLife", "max"),
-    ).reset_index().sort_values(["car_id", "stint"])
+    firsts = (
+        d.groupby("stint_id")
+        .agg(
+            car_id=("car_id", "first"),
+            stint=("Stint", "first"),
+            start_age=("TyreLife", "min"),
+            end_age=("TyreLife", "max"),
+        )
+        .reset_index()
+        .sort_values(["car_id", "stint"])
+    )
     prev_end = firsts.groupby("car_id")["end_age"].shift(1)
     no_reset = int((firsts["start_age"] > prev_end).sum())
     add("tyre_age_resets_at_stop", no_reset, len(firsts), "new stint starts on a younger tyre")
@@ -79,8 +85,12 @@ def run_gates(laps: pd.DataFrame) -> pd.DataFrame:
     # Lap times within physical bounds (after filtering).
     lt = pd.to_numeric(laps.get("lap_time_s", laps.get("LapTime")), errors="coerce").dropna()
     out_of_range = int((~lt.between(config.MIN_LAP_TIME_S, config.MAX_LAP_TIME_S)).sum())
-    add("lap_time_in_bounds", out_of_range, len(lt),
-        f"{config.MIN_LAP_TIME_S}-{config.MAX_LAP_TIME_S}s")
+    add(
+        "lap_time_in_bounds",
+        out_of_range,
+        len(lt),
+        f"{config.MIN_LAP_TIME_S}-{config.MAX_LAP_TIME_S}s",
+    )
 
     # Every canonical circuit key is one we know about.
     from pitwall.circuits import CIRCUIT_REF
@@ -105,17 +115,21 @@ def _track_status_flags(laps: pd.DataFrame) -> pd.DataFrame:
         _red=ts.str.contains(RED_FLAG),
         _sc=ts.str.contains(SAFETY_CAR) | ts.str.contains(VSC),
     )
-    per_race = d.groupby("race_id").agg(
-        year=("year", "first"),
-        round=("round", "first"),
-        event_name=("event_name", "first"),
-        circuit=("circuit", "first"),
-        race_laps=("race_laps", "max"),
-        n_laps=("LapNumber", "size"),
-        n_green=("is_green", "sum"),
-        any_red=("_red", "max"),
-        n_drivers=("Driver", "nunique"),
-    ).reset_index()
+    per_race = (
+        d.groupby("race_id")
+        .agg(
+            year=("year", "first"),
+            round=("round", "first"),
+            event_name=("event_name", "first"),
+            circuit=("circuit", "first"),
+            race_laps=("race_laps", "max"),
+            n_laps=("LapNumber", "size"),
+            n_green=("is_green", "sum"),
+            any_red=("_red", "max"),
+            n_drivers=("Driver", "nunique"),
+        )
+        .reset_index()
+    )
 
     # Earliest lap on which a red flag appears, as a fraction of distance.
     red = d[d["_red"]].groupby("race_id")["LapNumber"].min()
@@ -145,9 +159,8 @@ def race_exclusions(laps: pd.DataFrame) -> pd.DataFrame:
 
     r["E1_too_few_green_laps"] = r["median_green_laps"] < config.MIN_GREEN_LAPS_FOR_RACE
     r["E2_not_a_race"] = r["race_laps"] < 2
-    r["E3_early_red_flag"] = (
-        r["first_red_fraction"].notna()
-        & (r["first_red_fraction"] <= config.EARLY_RED_FLAG_RACE_FRACTION)
+    r["E3_early_red_flag"] = r["first_red_fraction"].notna() & (
+        r["first_red_fraction"] <= config.EARLY_RED_FLAG_RACE_FRACTION
     )
     r["E5_wet_race"] = r["wet_lap_share"] > 0.30
 
@@ -172,10 +185,11 @@ def filter_report(pace: pd.DataFrame) -> pd.DataFrame:
     rep = pace.attrs.get("filter_report", {})
     n0 = pace.attrs.get("n_before_filter", len(pace))
     rows = [
-        {"rule": k, "n_removed": v, "share_of_raw": v / n0 if n0 else 0.0}
-        for k, v in rep.items()
+        {"rule": k, "n_removed": v, "share_of_raw": v / n0 if n0 else 0.0} for k, v in rep.items()
     ]
-    rows.append({"rule": "RETAINED", "n_removed": len(pace), "share_of_raw": len(pace) / n0 if n0 else 0})
+    rows.append(
+        {"rule": "RETAINED", "n_removed": len(pace), "share_of_raw": len(pace) / n0 if n0 else 0}
+    )
     return pd.DataFrame(rows)
 
 

@@ -34,7 +34,7 @@ from pitwall.models.pace import pool_random_effects
 
 log = logging.getLogger("pitwall.models.raceparams")
 
-SC_CODES = ("4", "6")   # safety car, virtual safety car
+SC_CODES = ("4", "6")  # safety car, virtual safety car
 RED_CODE = "5"
 
 MIN_STOPS_FOR_CIRCUIT = 8
@@ -74,16 +74,16 @@ def estimate_pit_loss(laps: pd.DataFrame) -> pd.DataFrame:
     inlaps = d[d["is_inlap"] & d["is_green"] & dry][
         ["car_id", "circuit", "year", "race_id", "LapNumber", "lap_time_s", "ref_lap_s"]
     ].rename(columns={"lap_time_s": "inlap_s"})
-    outlaps = d[d["is_outlap"] & d["is_green"] & dry][
-        ["car_id", "LapNumber", "lap_time_s"]
-    ].rename(columns={"lap_time_s": "outlap_s"})
+    outlaps = d[d["is_outlap"] & d["is_green"] & dry][["car_id", "LapNumber", "lap_time_s"]].rename(
+        columns={"lap_time_s": "outlap_s"}
+    )
     outlaps["LapNumber"] = outlaps["LapNumber"] - 1  # pair each out-lap with its in-lap
 
     stops = inlaps.merge(outlaps, on=["car_id", "LapNumber"], how="inner").dropna(
         subset=["inlap_s", "outlap_s", "ref_lap_s"]
     )
-    stops["pit_loss_s"] = (
-        (stops["inlap_s"] - stops["ref_lap_s"]) + (stops["outlap_s"] - stops["ref_lap_s"])
+    stops["pit_loss_s"] = (stops["inlap_s"] - stops["ref_lap_s"]) + (
+        stops["outlap_s"] - stops["ref_lap_s"]
     )
 
     # A stop cannot plausibly cost under 8 s or over 60 s under green; outside
@@ -119,7 +119,10 @@ def estimate_pit_loss(laps: pd.DataFrame) -> pd.DataFrame:
 
     log.info(
         "pit loss: %d stops across %d circuits, global median %.1fs (between-circuit SD %.1fs)",
-        int(per_circuit["n_stops"].sum()), len(per_circuit), mu, float(np.sqrt(tau2)),
+        int(per_circuit["n_stops"].sum()),
+        len(per_circuit),
+        mu,
+        float(np.sqrt(tau2)),
     )
     return per_circuit.sort_values("pit_loss_shrunk")
 
@@ -157,9 +160,7 @@ def caution_events(track_status: pd.DataFrame, laps: pd.DataFrame) -> pd.DataFra
                 code == RED_CODE and prev != RED_CODE
             )
             if started and np.isfinite(r["Time"]):
-                lap = boundaries.loc[
-                    boundaries["lap_end_time"] >= r["Time"], "LapNumber"
-                ]
+                lap = boundaries.loc[boundaries["lap_end_time"] >= r["Time"], "LapNumber"]
                 rows.append(
                     {
                         "race_id": race_id,
@@ -223,7 +224,10 @@ def caution_hazard(laps: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
 
     log.info(
         "caution hazard: %d cautions over %d circuits, global %.4f/lap (between-circuit SD %.4f)",
-        int(out["n_cautions"].sum()), len(out), mu, float(np.sqrt(tau2)),
+        int(out["n_cautions"].sum()),
+        len(out),
+        mu,
+        float(np.sqrt(tau2)),
     )
     return out.sort_values("hazard_shrunk", ascending=False)
 
