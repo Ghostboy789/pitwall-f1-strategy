@@ -143,13 +143,18 @@ real F1 strategists does the optimiser claim to be? Thresholds were fixed in
 beating more than 70% of car-races, or any single gain above 30 s declares the
 model **broken**, not brilliant.
 
-The first run tripped **all three**:
+It failed. Four times, each after a genuine fix:
 
-| Criterion | Result | Threshold |
-|---|---|---|
-| Mean gain over real strategy | **23.49 s** | 2.0 s |
-| Car-races the optimiser beat | **97%** | 70% |
-| Largest single claimed gain | **107.6 s** | 30 s |
+| Run | Mean gain | Beat | What was fixed before it |
+|---|---|---|---|
+| 1 | **23.49 s** | 97% | — |
+| 2 | 21.32 s | 96% | stops inferred from a stint counter, inventing pit stops nobody made |
+| 3 | 20.36 s | 95% | optimiser proposing stints no team has ever run |
+| 4 | **17.73 s** | 88% | optimiser starting on a compound the rules forbade |
+
+Threshold is 2.0 s. **It still fails by roughly nine times, and I stopped
+fixing there** — continuing to adjust a model until a pre-registered check
+passes is how such a check gets quietly defeated.
 
 **It was not beating strategists. It was beating a corrupted reconstruction of
 what they did.** Strategies were inferred from FastF1's `Stint` counter, which
@@ -180,9 +185,35 @@ and a reconstruction claiming more than four stops is dropped rather than
 modelled. Reconstruction now looks like real F1: a 2021 race resolves to 11
 one-stops, 8 two-stops and 1 three-stop.
 
+### Where the failure lives — and it is one specific thing
+
+Splitting the final audit by how many stops the team made versus how many the
+optimiser wanted localises it almost entirely:
+
+| Team made … than the optimiser wanted | Car-races | Mean claimed gain |
+|---|---|---|
+| the **same** number of stops | 320 | **6.42 s** (median **2.20 s**) |
+| one **more** stop | 297 | 22.06 s |
+| two more | 79 | 43.04 s |
+
+**When the stop count agrees, the model is nearly defensible** — a median of
+2.20 s against a 2.0 s threshold. The failure is concentrated where the team
+stopped more often than the model thinks it should have, and each extra stop
+costs almost exactly one pit loss.
+
+The model is broadly right about **when** to stop and systematically wrong
+about **how many times**. It under-stops because it believes tyres last longer
+than they do — trap T2 again. The audit did not merely fail; it measured, in
+seconds, how far short the censoring correction falls.
+
+**Consequence, stated plainly: the counterfactual audit layer is not
+trustworthy, and its per-team and per-driver numbers are not published as
+findings anywhere in this repository.** The brief's secondary deliverable is
+therefore not delivered. The headline finding above is unaffected — it comes
+from the overtaking model, which is separately validated.
+
 Without the gate, this project would have published a model claiming it could
-save professional race strategists twenty-three seconds a race. The current
-verdict is in `MORNING_REPORT.md` and on the dashboard.
+save professional race strategists twenty-three seconds a race.
 
 ---
 
