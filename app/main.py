@@ -281,12 +281,12 @@ def api_optimise(req: SimRequest) -> JSONResponse:
     """Best strategies for a circuit, closed form then simulated."""
     _require_ready()
     from pitwall import pipeline
-    from pitwall.optimize import enumerate_strategies
+    from pitwall.optimize import diverse_candidates, enumerate_strategies
 
     if req.circuit not in STATE["circuits"]:
         raise HTTPException(404, f"unknown circuit {req.circuit}")
     p = pipeline.circuit_params(req.circuit, STATE["artifacts"])
-    cands = enumerate_strategies(p, max_stops=2)[:8]
+    cands = diverse_candidates(enumerate_strategies(p, max_stops=2), 8)
 
     mid = p.race_laps // 2
     field = [

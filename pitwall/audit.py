@@ -35,7 +35,7 @@ import numpy as np
 import pandas as pd
 
 from pitwall import config
-from pitwall.optimize import enumerate_strategies
+from pitwall.optimize import diverse_candidates, enumerate_strategies
 from pitwall.sim import Car, CircuitParams, Strategy, simulate
 
 log = logging.getLogger("pitwall.audit")
@@ -169,7 +169,9 @@ def audit_race(
         return pd.DataFrame()
 
     actual = simulate(params, field, n_sims=cfg.n_sims, seed=cfg.seed)
-    candidates = enumerate_strategies(params, max_stops=cfg.max_stops)[: cfg.top_k]
+    candidates = diverse_candidates(
+        enumerate_strategies(params, max_stops=cfg.max_stops), cfg.top_k
+    )
     if not candidates:
         return pd.DataFrame()
 

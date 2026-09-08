@@ -120,6 +120,30 @@ def enumerate_strategies(
     return out
 
 
+def diverse_candidates(candidates: list[Candidate], k: int) -> list[Candidate]:
+    """The best strategy from each distinct *family*, not the global top k.
+
+    Taking the k cheapest closed-form strategies is not a search. Because the
+    cost surface is smooth in stop lap, the leaders are all the same plan
+    shifted by a lap: at Monaco the top five were one-stops with stints of
+    36/42, 42/36, 35/43, 43/35 and 37/41. Simulating those five answers the
+    same question five times, and the counterfactual audit built on them would
+    understate what a genuinely different strategy was worth.
+
+    A family is ``(number of stops, compound sequence)``. Keeping the cheapest
+    member of each puts real alternatives in front of the simulator - a
+    two-stop against a one-stop, hard-then-soft against soft-then-hard - which
+    is where traffic and cautions can actually change the ranking.
+    """
+    best: dict[tuple, Candidate] = {}
+    for c in candidates:
+        family = (c.n_stops, c.strategy.start_rank, tuple(r for _, r in c.strategy.stops))
+        if family not in best or c.deterministic_cost_s < best[family].deterministic_cost_s:
+            best[family] = c
+    ordered = sorted(best.values(), key=lambda c: c.deterministic_cost_s)
+    return ordered[:k]
+
+
 def optimise(
     params: CircuitParams,
     field: list[Car],
@@ -138,7 +162,7 @@ def optimise(
     if not candidates:
         return pd.DataFrame()
 
-    shortlist = candidates[:top_k]
+    shortlist = diverse_candidates(candidates, top_k)
     rows = []
     for cand in shortlist:
         trial = list(field)
