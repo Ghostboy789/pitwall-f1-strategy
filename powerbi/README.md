@@ -8,7 +8,7 @@ A five-page Power BI report over the same data and fitted models as the [live da
 
 1. Install [Power BI Desktop](https://www.microsoft.com/power-bi/desktop) (Windows, free).
 2. Clone the repository and open **`powerbi/PitWall.pbip`**.
-3. Click **Refresh**. The data loads from this repository's `powerbi/data` folder on GitHub, about 3 MB, in roughly 15 seconds.
+3. Click **Refresh**. The data loads from this repository's `powerbi/data` folder on GitHub, about 3 MB, in roughly 15 seconds. The first time, Power BI asks how to connect to the web source: choose **Anonymous**, then **Connect**.
 
 To work offline, set the `DataFolder` parameter (Transform data → Edit parameters) to your local `powerbi\data\` path.
 
