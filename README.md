@@ -1,294 +1,166 @@
 # Pit Wall
 
-**A race-strategy counterfactual engine for Formula 1.** Almost every public F1
-analysis answers *what happened*. This one answers what **should** have
-happened, by how much, and with an honest error bar.
+**An F1 race-strategy model built from 185 races, validated until it failed, and diagnosed rather than tuned.**
 
 [![CI](https://github.com/Ghostboy789/pitwall-f1-strategy/actions/workflows/ci.yml/badge.svg)](https://github.com/Ghostboy789/pitwall-f1-strategy/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-15171a)
+![Tests](https://img.shields.io/badge/tests-102%20passing-0e8a8c)
+
+By **Medhansh Shekhawat** · [LinkedIn](https://www.linkedin.com/in/medhansh-shekhawat) · [GitHub](https://github.com/Ghostboy789)
+
+![Pit Wall overview dashboard](docs/overview-light.png)
+
+Most public F1 analysis answers *what happened*. Pit Wall asks what **should** have happened, by how much, and with an honest error bar. It prices what a place on track is worth at every circuit, then puts its own strategy optimiser through a validation plan written before any result existed. The optimiser failed that plan. The failure was measured, localised and explained, and the claims that depended on it were withheld.
 
 ---
 
 ## The finding
 
-> **The same tyre advantage is worth nine times more at Monaco than at the
-> Circuit of the Americas — and the two are statistically distinguishable.**
+> **A place on track is worth at least 8.7× more at Monte Carlo than at the Circuit of the Americas, and the two are statistically distinguishable.**
 
-![Pit Wall dashboard](docs/dashboard.png)
-
-A car half a second a lap quicker than the one ahead does not simply drive past.
-It waits. How long it waits is a property of the circuit, and that wait, priced
-in seconds, is what track position is worth.
-
-Holding the scenario identical everywhere — follower 0.5 s/lap quicker, one
-second behind, DRS available, mid-race, 25 laps to run:
+Same scenario at every circuit: the follower is 0.5 s/lap quicker, one second behind, in DRS range, with 25 laps to go.
 
 | Circuit | Pass chance per lap | Cost of being stuck | 95% interval | Races |
 |---|---|---|---|---|
 | **Monte Carlo** | 1.6% | **12.5 s** (stuck to the flag) | 6.6 – 12.5 | 8 |
-| **Zandvoort** | 8.0% | 6.27 s | 3.4 – 9.5 | 6 |
-| Gilles Villeneuve | 9.2% | 5.46 s | 3.0 – 9.5 | 7 |
-| Albert Park | 10.4% | 4.81 s | 2.7 – 8.6 | 6 |
-| **Monza** | 20.4% | 2.45 s | 1.7 – 4.2 | 8 |
-| **Spa-Francorchamps** | 27.6% | 1.81 s | 1.3 – 2.8 | 8 |
-| Bahrain International | 31.8% | 1.57 s | 1.2 – 2.7 | 8 |
-| Circuit of the Americas | 34.6% | 1.44 s | 1.0 – 2.5 | 7 |
+| Zandvoort | 8.0% | 6.3 s | 3.4 – 9.5 | 6 |
+| Gilles Villeneuve | 9.2% | 5.5 s | 3.0 – 9.5 | 7 |
+| Monza | 20.4% | 2.4 s | 1.7 – 4.2 | 8 |
+| Spa-Francorchamps | 27.6% | 1.8 s | 1.3 – 2.8 | 8 |
+| Bahrain International | 31.8% | 1.6 s | 1.2 – 2.7 | 8 |
+| **Circuit of the Americas** | 34.6% | **1.4 s** | 1.0 – 2.5 | 7 |
 
-Monaco against COTA is **8.7×** with non-overlapping intervals; against Bahrain
-**8.0×**, and against Monza **5.1×** — all three distinguishable. (The strapline
-is restricted to circuits with at least five races, so the claim is never
-anchored on the thinnest sample on the page.)
+Intervals are a cluster bootstrap over races, stratified by circuit. Monte Carlo sits at the ceiling (the car never gets past), so its figure and the ratio are **floors**.
 
-**What is not established, stated as plainly:** adjacent circuits are *not*
-separable. Zandvoort against Monza (2.6×) and Spa against Monza (0.7×) both
-have overlapping intervals. The finding is a real spread across the extremes,
-not a precise ranking of every circuit.
-
-**One result contradicts the premise the project was framed on.** Spa was
-expected to sit near Monza as an easy-overtaking circuit; it comes out *easier*
-than Monza (27.6% vs 20.4% conversion). That is what the data says and it is
-reported as such rather than smoothed over.
+**What is not established:** adjacent circuits are *not* separable (Zandvoort vs Monza, Spa vs Monza both overlap). The finding is the spread between the extremes, not a ranking of every track. And Spa comes out *easier* to pass at than Monza, against the premise the project started from; that is reported, not smoothed.
 
 ---
 
-## Why this is hard, and what was done about it
+## How it was tested
 
-The headline number is one line of arithmetic. Everything else exists because
-the inputs to it are booby-trapped.
+Every check below was written into [`VALIDATION_PLAN.md`](VALIDATION_PLAN.md), with the limits that would declare the model broken, **before any result was computed**. The commit history is the evidence.
 
-### Tyre degradation is measured from data that systematically hides it
-
-Teams pit when a tyre is finished, so the worst of every degradation curve is
-missing — and missing non-randomly. **Measured, not assumed:** a stint's
-degradation over its first five laps predicts how soon it was pitted
-(r = −0.126, p = 1.7×10⁻¹⁷, across 4,565 stints).
-
-A second, larger selection was found during the build: teams choose the *harder*
-compound for exactly the stints where degradation will be worst, so the
-compounds are never observed under equal conditions. Uncorrected, **the data
-says harder tyres degrade faster than softer ones** — which is backwards.
-
-Three estimators, reported side by side because the progression is the result:
-
-| Estimator | Softest | Middle | Hardest | Correct ordering | Physically impossible cells |
-|---|---|---|---|---|---|
-| Naive | 0.0317 | 0.0258 | 0.0325 | 11 / 29 | **11 / 89** |
-| + two-way fixed effects | 0.0321 | 0.0295 | 0.0320 | 15 / 29 | 2 / 89 |
-| **+ censoring correction** | **0.0386** | 0.0272 | 0.0332 | **21 / 29** | **1 / 89** |
-
-The final estimator recovers an ordering it was never told about — softer tyres
-degrade faster — and drives negative degradation (tyres getting *quicker* with
-age) from 11 cells to 1.
-
-### Compound labels are relative, not absolute
-
-`SOFT` at one event is different rubber from `SOFT` at another. In this dataset
-the label **`SOFT` is the hardest available compound in 3,006 laps, the middle
-in 2,272, and the softest in 5,772.** Pooling by label merges three tyres.
-No public dataset of per-event Pirelli allocations exists (see `SOURCES.md`), so
-compounds are ranked *within their own event* — which is what the label means.
-
-### Fuel burn confounds everything, and cannot be fully separated
-
-A negative result, reported as one: fuel burn and track evolution are **not
-separately identified** in race data. Zero of 27 circuits met the separability
-threshold; median correlation **0.9981**.
-
-What *is* identified — and is what matters — is fuel against degradation. Two
-independent specifications agree without being calibrated to:
-
-- mixed-effects pace model: **−0.0535 s/lap** (IQR −0.068 to −0.046)
-- entirely separate degradation model: **−0.0574 s/lap**
-- **all 27 circuits** fall inside the physically expected band (~1.7 kg/lap ×
-  ~0.03 s/kg ≈ 0.05 s/lap)
-- and it scales with lap distance as fuel must and evolution need not:
-  **r = −0.759, p = 4×10⁻⁶**
-
-### Circuits are not what the data calls them
-
-FastF1's `Location` gives 35 strings for 32 real circuits. Monaco/Monte Carlo,
-Singapore/Marina Bay, Miami/Miami Gardens and Yas Island/Yas Marina are each one
-circuit named twice — while **`Sakhir` is two different layouts** (the 2020
-Sakhir GP ran Bahrain's 3.5 km outer loop). Grouping by `Location` would both
-split and merge circuits, corrupting the per-circuit number this project exists
-to produce.
-
----
-
-## Validation
-
-The validation plan was **committed before any result was computed**
-(`VALIDATION_PLAN.md`); the commit history is the evidence.
-
-**Overtaking is calibrated, not just discriminative.** Out-of-fold predictions
-split by race (never by row — opportunities from one race share weather, track
-state and the same two cars):
-
-- **AUC 0.915 · Brier 0.0487 · expected calibration error 0.0025** on a 7.7%
-  base rate, over 64,646 opportunities.
-
-**The pass detector validates against reality without being tuned to it:**
-Monaco 3.8 passes per race, rising to Las Vegas 40.7 and Portimão 37.5.
-
-**Leakage was checked, not assumed.** `pace_delta_s` is built from clean-air laps
-across the whole race, so it can see past the pass. Ablating it costs 0.015 AUC
-(0.908 → 0.893); `gap_s` alone reaches 0.851.
-
-**All 8 data-quality gates pass** across 203,644 laps.
-
-### The sanity gate failed, and that is the most useful thing in this repo
-
-Validation V3 asks a question with a pre-registered answer: how much better than
-real F1 strategists does the optimiser claim to be? Thresholds were fixed in
-`VALIDATION_PLAN.md` before anything was computed — a mean gain above 2.0 s,
-beating more than 70% of car-races, or any single gain above 30 s declares the
-model **broken**, not brilliant.
-
-It failed. Four times, each after a genuine fix:
-
-| Run | Mean gain | Beat | What was fixed before it |
-|---|---|---|---|
-| 1 | **23.49 s** | 97% | — |
-| 2 | 21.32 s | 96% | stops inferred from a stint counter, inventing pit stops nobody made |
-| 3 | 20.36 s | 95% | optimiser proposing stints no team has ever run |
-| 4 | **17.73 s** | 88% | optimiser starting on a compound the rules forbade |
-
-Threshold is 2.0 s. **It still fails by roughly nine times, and I stopped
-fixing there** — continuing to adjust a model until a pre-registered check
-passes is how such a check gets quietly defeated.
-
-**It was not beating strategists. It was beating a corrupted reconstruction of
-what they did.** Strategies were inferred from FastF1's `Stint` counter, which
-increments for reasons other than a pit stop, so the audit invented races nobody
-ran:
-
-```
-start-r1 L2->r1  L3->r1  L36->r2 L63->r0    stops on laps 2 AND 3
-start-r1 L35->r2 L36->r2 L37->r2 L45->r2    three stops in three laps
-start-r1 L1->r1  ...                        a lap-1 stop refitting the
-                                            compound already on the car
-```
-
-The simulator charges full pit loss per stop, so a car credited with five
-phantom stops paid ~110 s its real race never spent. The signature was
-unmistakable once looked for — mean claimed gain rose monotonically with the
-number of *reconstructed* stops:
-
-| Reconstructed stops | 1 | 2 | 3 | 4 |
-|---|---|---|---|---|
-| Mean claimed gain | 10.9 s | 22.0 s | 47.8 s | 69.6 s |
-
-That is the shape of an artefact, not of a strategic insight.
-
-**The fix:** a stop is an in-lap — the authoritative signal — and only that.
-Consecutive in-laps collapse to one stop, a stop on the final lap is ignored,
-and a reconstruction claiming more than four stops is dropped rather than
-modelled. Reconstruction now looks like real F1: a 2021 race resolves to 11
-one-stops, 8 two-stops and 1 three-stop.
-
-### Where the failure lives — and it is one specific thing
-
-Splitting the final audit by how many stops the team made versus how many the
-optimiser wanted localises it almost entirely:
-
-| Team made … than the optimiser wanted | Car-races | Mean claimed gain |
+| | Check | Result |
 |---|---|---|
-| the **same** number of stops | 320 | **6.42 s** (median **2.20 s**) |
-| one **more** stop | 297 | 22.06 s |
-| two more | 79 | 43.04 s |
+| V1 | Predict finishing order in held-out seasons | **Not run.** Listed, not dropped |
+| V2 | Overtaking probabilities calibrated, out-of-fold by race | **Pass.** AUC 0.915 · Brier 0.0487 · ECE 0.0025 on 64,646 opportunities |
+| V3 | Does the optimiser claim implausible gains over real strategists? | **Fail.** 17.6 s mean claimed gain against a 2.0 s limit |
+| V4 | Ablations | **Partial.** Leakage only: removing the pace feature costs 0.015 AUC |
+| V5 | Structural data-quality gates | **Pass.** 8 of 8 across 203,644 laps |
+| V6 | Does the simulator price strategy like real races? *(added after V3 failed)* | **Fail.** See below |
 
-**When the stop count agrees, the model is nearly defensible** — a median of
-2.20 s against a 2.0 s threshold. The failure is concentrated where the team
-stopped more often than the model thinks it should have, and each extra stop
-costs almost exactly one pit loss.
+### The sanity gate failed, and why
 
-The model is broadly right about **when** to stop and systematically wrong
-about **how many times**. It under-stops because it believes tyres last longer
-than they do — trap T2 again. The audit did not merely fail; it measured, in
-seconds, how far short the censoring correction falls.
+![The failed sanity gate](docs/validation.png)
 
-**Consequence, stated plainly: the counterfactual audit layer is not
-trustworthy, and its per-team and per-driver numbers are not published as
-findings anywhere in this repository.** The brief's secondary deliverable is
-therefore not delivered. The headline finding above is unaffected — it comes
-from the overtaking model, which is separately validated.
+An optimiser that claims to beat professional strategists by a wide margin is broken, not brilliant. This one claimed 17.6 s per car-race. Four rounds of genuine fixes, each a real bug, moved it 23.5 → 21.3 → 20.4 → 17.7 s, then fixing stopped: adjusting a model until a pre-registered check passes is how such a check gets quietly defeated.
 
-Without the gate, this project would have published a model claiming it could
-save professional race strategists twenty-three seconds a race.
+The failure sits almost entirely in **how many times** cars stopped. When the optimiser agrees with the team's stop count, the median claimed gain is 2.1 s. Each extra stop the team made adds almost exactly one pit stop of phantom gain (21.9 s for one, 42.8 s for two).
+
+To find out why, V6 costs the **same 1,893 cars in 132 races**, each on the strategy it actually ran, twice: from real finishing times, and from simulated replays.
+
+| Cost of… | Real races | Simulator | Simulator − real (paired) |
+|---|---|---|---|
+| One extra pit stop | −1.0 s [−7.1, +4.2] | +8.8 s | **+9.9 s [+2.3, +17.3]** |
+| Uneven stints (per unit of longest-stint share) | −4.4 s [−42, +32] | +118 s | **+122 s [+78, +167]** |
+
+**Real finishing times are insensitive to both; the simulator charges for both.** The per-lap tyre model is right (held-out calibration 1.02); what fails is the step from lap to race, because the simulator runs every car flat out on its fitted wear rate while real drivers manage their tyres.
+
+Ruled out on the way, each with a number: simulation noise (0.33 s of a 16 s gain survives a fresh random seed), a biased wear slope (per-circuit slope error uncorrelated with claimed gain, r = −0.02), and extrapolation to impossible stints. Two calibrated fixes were **rejected**: each matched the quantity it was fitted to and missed the one it wasn't, and one made the gate worse.
+
+**Consequence: the per-team and per-driver strategy audit is not published.**
 
 ---
 
-## Bugs this project found in itself
+## Five dashboards
 
-Kept in the history deliberately. Each was caught by a number being physically
-impossible, not by a test failing.
+| | |
+|---|---|
+| **Overview** · the finding, the tyre-data trap, calibration, the failed gate and why it failed | **Circuits** · any circuit, or two side by side, against the whole field, each value with its interval |
+| ![Overview in dark mode](docs/overview-dark.png) | ![Circuits dashboard](docs/circuits.png) |
+| **Tyres** · wear for every circuit and compound under each estimator, with race-clustered intervals | **Simulator** · drag pit stops along a lap strip and run 600 races |
+| ![Tyres dashboard](docs/tyres.png) | ![Race simulator](docs/simulator.png) |
+
+The **Validation** page is the full model-risk report: V1–V6 status, calibration, the gate, real-versus-simulated costs, data-quality gates, and the 23 races excluded by rules written in advance. Light and dark themes follow the visitor's system setting, with a toggle.
+
+---
+
+## Why this was hard
+
+**Tyre wear is measured from data that hides it.** Teams pit when a tyre is finished, so the worst of every wear curve is never observed, and missing non-randomly: a stint's wear over its first five laps predicts how soon it was pitted (r = −0.126, 4,565 stints). Teams also put the harder tyre on exactly the stints where wear will be worst, so uncorrected data says **hard tyres wear faster than soft ones**. Three estimators, reported side by side:
+
+| Estimator | Soft wears fastest | Impossible cells (tyre gets faster with age) |
+|---|---|---|
+| Naive | 11 / 29 circuits | **11 / 89** |
+| + two-way fixed effects (same race, same moment) | 15 / 29 | 2 / 89 |
+| + inverse-probability censoring weights | **21 / 29** | **1 / 89** |
+
+For the simulator, each circuit-compound cell is then pooled toward its compound's cross-circuit mean by empirical Bayes, with standard errors clustered by race (2.9× the naive ones). That pooling was adopted only under a rule fixed beforehand: it had to lower held-out lap-time error, and it did.
+
+**Compound labels are relative.** `SOFT` is the hardest tyre available in 3,006 laps of this data and the softest in 5,772. Compounds are ranked within their own event.
+
+**Fuel burn and track evolution cannot be separated** in race data (0 of 27 circuits). What is identified, fuel against wear, agrees across two independent models (−0.054 and −0.057 s/lap) and scales with lap length as physics requires (r = −0.76).
+
+**Circuits are not what the data calls them.** FastF1 names 32 circuits 35 ways, and `Sakhir` is two different layouts.
+
+### Bugs the project found in itself
 
 | Symptom | Cause |
 |---|---|
-| Fuel coefficient of **+4.46 s per lap** | `fuel_burned` and `race_progress` are an exact affine transform within a race |
-| Every degradation cell **negative** | centring within a stint makes tyre age and fuel the identical vector |
-| 13 circuits with the **identical** pass probability (0.083655) | the overtaking model had no circuit term — only DRS-zone count and street/not |
-| Track position worth **exactly nothing** | blocking resolved against the post-lap order, so every faster car escaped 100% of the time |
-| Imola pit loss of **45.9 s** (published ~28) | wet races included; an out-lap on intermediates is not pit-lane time |
-| Every circuit shrunk to **one** caution rate | binomial SE over laps treated 300 correlated laps as 300 trials |
-| The optimiser's "top 6" was **one plan shifted a lap** | ranked globally instead of by strategy family |
-| A data-quality gate failing on **565 stints** | the gate was wrong — those are used tyre sets, correctly flagged |
-| Optimiser beating real strategy by **23.5 s** | stops inferred from a stint counter, inventing pit stops nobody made |
-| A stop at lap 37 surviving a 35/36/37 run | compared against the last *accepted* stop, not the last in-lap seen |
+| Optimiser beating real strategy by 23.5 s | stops inferred from a stint counter, inventing pit stops nobody made |
+| Track position worth exactly nothing | blocking resolved against the post-lap order, so every faster car escaped |
+| Fuel coefficient of +4.46 s per lap | two regressors an exact affine transform of each other |
+| 13 circuits with the identical pass probability | the overtaking model had no circuit term |
+| Imola pit loss of 45.9 s | wet races included; an out-lap on intermediates is not pit-lane time |
+| A tyre that never wears (0.0004 s/lap) winning every plan | noisy cell, naive standard errors; fixed by race-clustered SEs and pooling |
+| A calibrated fix that passed its own test | it failed the test it wasn't fitted to, and was rejected |
 
 ---
 
-## Running it
+## Relevance beyond racing
+
+The problems here are the everyday problems of credit risk modelling in different clothes:
+
+- **Censoring and survivorship.** A pit decision hides the end of a tyre's life the way prepayment and charge-off hide the end of a loan's; inverse-probability weighting and a survival model handle both.
+- **Calibration, not just discrimination.** A probability model is judged on its reliability curve and calibration error, as a PD model is.
+- **Partial pooling for thin segments.** Empirical-Bayes shrinkage of noisy cells is the low-default-portfolio problem.
+- **Effective challenge.** A pre-registered plan, a sanity gate against expert benchmarks, out-of-sample backtesting against realised outcomes, and withholding results that fail validation.
+
+---
+
+## Run it
 
 ```bash
 python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-python -m pitwall.ingest              # ~185 races, resumable
-python -m pitwall.backfill_results    # grid positions, rate-paced
+python -m pitwall.ingest              # 185 races from FastF1, resumable
+python -m pitwall.backfill_results    # grid positions
 python -m pitwall.pipeline            # every model, one command
 python -m scripts.run_audit --races 40
-uvicorn app.main:app --reload
+python -m scripts.validate_strategy   # V6
+uvicorn app.main:app --reload         # http://127.0.0.1:8000
+pytest                                # 102 tests
 ```
 
-Then open <http://127.0.0.1:8000>.
-
-Everything is reproducible from a clean clone: fixed seed (`config.SEED`),
-pinned `requirements.txt`, and one command per stage. The app degrades honestly
-if artefacts are missing — it returns 503 with instructions rather than
-crashing.
-
----
+Fitted artefacts are committed in `models_out/`, so the dashboards run from a clean clone without re-ingesting. One `Dockerfile` binding `$PORT` runs on Render, Fly, Railway or Hugging Face Spaces unchanged.
 
 ## Layout
 
 ```
 pitwall/
-  config.py        scope, eras, thresholds fixed before results
-  circuits.py      canonical circuit identity (trap T6)
-  compounds.py     within-event relative hardness (trap T1)
-  ingest.py        resumable ingestion with a failure manifest
-  dataset.py       lap filters L1-L5
-  quality.py       data-quality gates + exclusion rules E1-E5
+  ingest.py, dataset.py, quality.py   resumable ingestion, lap filters, data-quality gates
+  circuits.py, compounds.py           canonical circuit identity, within-event compound rank
   models/
-    pace.py        per-circuit mixed models + empirical-Bayes pooling
-    degradation.py three estimators: naive, two-way FE, + censoring
-    overtaking.py  pass detection, calibration, circuit effects
-    raceparams.py  empirical pit loss + caution hazard
-  sim.py           Monte Carlo with the blocking mechanic
-  optimize.py      closed-form enumeration then simulation
-  audit.py         counterfactual audit + the sanity gate
-  trackposition.py the headline metric
-app/               FastAPI + Jinja2 + hand-rolled SVG charts
-tests/             64 tests
+    pace.py                           per-circuit mixed models, empirical-Bayes pooling
+    degradation.py                    naive, two-way FE, censoring-corrected, pooled
+    overtaking.py                     pass detection, calibration, circuit effects
+    raceparams.py                     empirical pit loss and caution hazard
+    strategy_validation.py            V6: strategy costs, real vs simulated
+  sim.py, optimize.py, audit.py       Monte Carlo simulator, optimiser, sanity gate
+  trackposition.py                    the headline metric
+app/                                  FastAPI + Jinja2 + hand-built SVG dashboards
+tests/                                102 tests
 ```
 
----
+Full method, every trap, twelve named limitations and every deviation from the plan: **[`METHODOLOGY.md`](METHODOLOGY.md)**. Data provenance and prior art: [`SOURCES.md`](SOURCES.md).
 
-## Honest positioning
-
-Monte Carlo race simulation is well-trodden and this project does not claim to
-have invented it (prior art in `SOURCES.md`). What is uncommon in the public
-work surveyed: correcting the censoring in degradation data, publishing a
-calibration curve rather than only a discrimination score, comparing the value
-of track position *across* circuits as the output, and a pre-registered sanity
-gate that treats an implausibly good optimiser as evidence of a broken model.
-
-Full method, every trap, and ten named limitations: **[`METHODOLOGY.md`](METHODOLOGY.md)**.
+*Pit Wall is an independent analysis of public timing data and is not affiliated with Formula 1, the FIA or any team.*

@@ -14,8 +14,8 @@ All access dates are **2026-09-08** unless stated otherwise.
 - **What it provides:** lap timing, stint and compound labels, tyre age,
   track status, weather, race control messages, session results, event
   schedule, for 2018 onwards.
-- **Verified directly rather than assumed.** The API surface described in this
-  project's brief was checked against the installed 3.8.3 before anything was
+- **Verified directly rather than assumed.** The API surface the project plan assumed
+  was checked against the installed 3.8.3 before anything was
   designed around it.
 
 ### The Ergast wind-down — verified, not assumed
@@ -124,7 +124,7 @@ Lap distances and DRS zone counts in `pitwall/circuits.py` are published
 reference figures, used only as covariates and sanity checks.
 
 **Pit-lane loss time is deliberately not sourced from publication.** It is
-estimated empirically per circuit-season from the data, as the brief requires:
+estimated empirically per circuit-season from the data, as the project plan requires:
 published figures vary between sources and change with pit-lane speed-limit
 and layout revisions, whereas the observed in-lap/out-lap time penalty is
 directly measurable.

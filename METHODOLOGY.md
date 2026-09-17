@@ -236,6 +236,25 @@ are right-censored.
 Weights are clipped at 10× so a near-zero survival probability cannot let one
 lap decide the answer.
 
+**Held-out check.** Fitted on 2018–2024 and scored on 2025–2026, the corrected
+slope predicts lap-time change at tyre ages 3–15 with a calibration coefficient
+of 1.02 ± 0.04 (1.0 is perfect).
+
+**Partial pooling for the simulator.** Individual circuit-compound cells are
+noisy: fitted on some races and scored on others, a cell's slope misses by
+0.031 s/lap, about the size of the slopes themselves, and a handful of cells
+land near zero (Albert Park's middle compound at 0.0004 s/lap, a tyre that
+never wears), which an optimiser will exploit. Standard errors are therefore
+clustered by race — laps from one race are not independent, and the clustered
+SE is a median 2.9× the naive one — and each cell is shrunk by empirical Bayes
+toward its compound's cross-circuit mean in proportion to its noise.
+
+The pooling was adopted under a rule fixed before running it: only if it
+lowered held-out lap-time error in 5-fold cross-validation by race. It did
+(MSE −0.0035 s², 95% CI −0.0059 to −0.0014; cell error 0.0306 → 0.0283 s/lap)
+and beat shrinkage toward each circuit's other compounds. The three published
+estimators are unchanged; the simulator reads the pooled column.
+
 ### Overtaking (`pitwall/models/overtaking.py`)
 
 A pass is inferred from consecutive laps: A behind B at lap L, ahead at L+1,
@@ -336,10 +355,11 @@ visited different circuits.
 
 ## 6. Validation results
 
-See `MORNING_REPORT.md` for the current run's numbers, and `models_out/` for
-the artefacts behind them. The procedures are:
+Every number here is reproducible from `models_out/`. The procedures are:
 
-- **V1 held-out race prediction** — split by season, not by row.
+- **V1 held-out race prediction** — split by season, not by row. **Not run.**
+  It is the one pre-registered check never executed, and it is listed as such
+  rather than dropped.
 - **V2 overtaking calibration** — reliability curve with 10 bins, plus Brier
   and ECE. Split by race with `GroupKFold`; opportunities from one race share
   weather, track state and the same two cars, so a random split would leak.
@@ -366,8 +386,57 @@ the artefacts behind them. The procedures are:
   reconstruction claiming more than four stops is dropped rather than modelled.
   A second bug surfaced in the same pass: the audit simulated each race over
   the circuit's *median* lap count rather than that race's own.
+
+  Three more genuine fixes followed — stints longer than any team has run,
+  starting compounds the rules forbade, and a resumable audit — taking the
+  mean claimed gain 23.49 → 21.32 → 20.36 → 17.73 s. Partial pooling of tyre
+  cells then took it to **17.61 s**, on the same 40 races. **The gate still
+  fails on all three criteria** (mean 17.61 s against 2.0 s; 86% of car-races
+  beaten against 70%; largest single gain 98.9 s against 30 s), and fixing
+  stopped rather than tuning toward it.
+
+  The failure localises to stop count. When the optimiser agrees with the
+  team's number of stops, the mean claimed gain is 6.1 s and the median 2.1 s;
+  with one extra stop by the team, 21.9 s; two, 42.8 s — almost exactly one pit
+  loss each. **Consequence: the per-team and per-driver audit is withheld.**
+
+  Hypotheses tested and refuted on the way, each with its number: simulation
+  noise (re-scoring the chosen plan on a fresh seed removes 0.33 s of a 16 s
+  gain; common random numbers already hold the paired noise to 1.5 s); a
+  biased degradation slope (held-out calibration 1.02; per-circuit slope error
+  uncorrelated with claimed gain, r = −0.02); truncating the survivorship tail
+  (worse on every pre-stated criterion); and wild extrapolation (the
+  optimiser's longest stints are no longer than teams').
 - **V4 ablations** — each component removed, change in held-out error reported.
+  **Partial:** only the overtaking leakage ablation was run (removing the pace
+  feature costs 0.015 AUC).
 - **V5 data-quality gates** — structural checks on the pipeline itself.
+  8 of 8 pass across 203,644 laps.
+- **V6 strategy costs, real vs simulated** — added after V3 failed, to find out
+  why (`pitwall/models/strategy_validation.py`). The same 1,893 car-races in
+  132 races, each car on the strategy it actually ran, costed twice: from real
+  finishing times and from simulated replays. Both are within-race regressions
+  controlling for grid position, with forced stops (a stint of five laps or
+  fewer, or a stop in the last five laps) removed, and cluster-bootstrapped over
+  races.
+
+  | | Real races | Simulator | Simulator − real (paired) |
+  |---|---|---|---|
+  | One extra pit stop | −1.0 s [−7.1, +4.2] | +8.8 s [+2.5, +15.4] | **+9.9 s [+2.3, +17.3]** |
+  | Stint balance, per unit of longest-stint share | −4.4 s [−42, +32] | +118 s [+90, +149] | **+122 s [+78, +167]** |
+
+  Real finishing times are insensitive to both how many stops a car made and
+  how it split its stints; the simulator charges for both. Per-lap wear is
+  estimated correctly — what fails is the step from lap to race, because the
+  simulator runs every car flat out on its fitted wear rate while real drivers
+  manage tyres.
+
+  Two calibrated fixes were tried and **rejected**. A (tyre age)² stint-cost
+  term, solved so the simulator matched the real cost of an extra stop on
+  2018–23, made the stint-balance mismatch worse (+199 s), made held-out lap-time
+  calibration worse (1.02 → 0.80), and raised a partial audit's claimed gain to
+  21.2 s. A lower effective pit loss matched the first moment and still missed
+  the second. This is a structural limit of the simulator, not a parameter.
 
 ---
 
@@ -380,8 +449,9 @@ one that names them.
    term is reported as combined and interpreted as fuel-dominated on evidence
    (physical band, lap-length scaling), not by assumption.
 2. **The censoring correction is partial.** IPCW conditions on observables;
-   teams act on information this model does not have. Residual bias
-   understates degradation.
+   teams act on information this model does not have. The corrected slope is
+   calibrated where tyres are still well populated (ages 3–15), but lap-time data
+   cannot show what happens to a tyre nobody chose to keep running.
 3. **Compound ranks are relative, not physical.** Cross-event pooling of
    absolute compound behaviour is not supported by this data.
 4. **The dirty-air proxy is a gap at the line**, not an average through the
@@ -399,3 +469,35 @@ one that names them.
 9. **Wet races are out of scope** for strategy modelling entirely.
 10. **The 2026 season is in progress**, so its sample is partial and its
     regulation era rests on 13 races.
+11. **The simulator mis-prices strategy** (V6): it charges for extra stops and
+    uneven stints that real finishing times do not. Its strategy preferences are
+    a demonstration of the mechanics, not advice.
+12. **Per-circuit compound wear is barely identified.** Its held-out error is
+    about the size of the effect, so compound choice at a given circuit is the
+    least reliable thing the optimiser does.
+
+---
+
+## 8. Deviations from the validation plan
+
+Recorded here rather than by editing the pre-registered plan.
+
+- **V1 was not run**, and **V4 was run only for leakage** (§6).
+- **V6 was added after V3 failed**, as a diagnostic. It is labelled as post hoc
+  wherever it appears.
+- **Partial pooling of tyre cells** was added to the simulator after V3, under a
+  rule fixed before it was tested (held-out error must improve).
+- **The audit samples 40 races**, spread across circuits, rather than all 162
+  eligible races, for runtime. The sample is fixed by seed.
+- **Qualifying sessions were not ingested.** Grid position comes from the race
+  classification, falling back to the order after lap 1.
+- **Sprint races are excluded** from strategy modelling; the Sunday races of
+  sprint weekends are included.
+- **Charts are hand-built SVG** rather than Plotly, for full control of every
+  mark and no charting dependency in the browser.
+- **The wet-race rule (E5, 30% of laps on wet tyres) sits inside a cluster of
+  mixed-condition races** rather than in the gap below it (0.065 to 0.243).
+  It was left unchanged because it was pre-registered and moving it would
+  improve the gate. On the earlier audit, tightening it to 10% removes one
+  audited race (Zandvoort 2023) and moves the gate from 17.73 s to 17.19 s: a
+  correctness point, not a rescue.

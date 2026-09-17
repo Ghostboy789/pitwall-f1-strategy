@@ -203,3 +203,14 @@ If either holds, that is the reported finding.
 ---
 
 *Committed before results. Deviations logged in `RUN_LOG.md`.*
+
+---
+
+## Addendum, 2026-09-17 (added after results; the plan above is unchanged)
+
+- Deviations are recorded in `METHODOLOGY.md` §8 rather than in a separate run
+  log, which is no longer part of the repository.
+- V1 was not run; V4 was run only for the leakage ablation.
+- V3 failed. V6 (strategy costs, real vs simulated) was added afterwards as a
+  diagnostic and is post hoc.
+
