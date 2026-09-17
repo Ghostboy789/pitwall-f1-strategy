@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
   "name": "slicer_circuit",
   "position": {
-    "x": 1086,
+    "x": 908,
     "y": 10,
-    "z": 400,
+    "z": 500,
     "height": 78,
     "width": 158,
-    "tabOrder": 400
+    "tabOrder": 500
   },
   "visual": {
     "visualType": "slicer",

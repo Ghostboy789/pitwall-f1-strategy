@@ -4,10 +4,10 @@
   "position": {
     "x": 0,
     "y": 686,
-    "z": 600,
+    "z": 700,
     "height": 34,
     "width": 1280,
-    "tabOrder": 600
+    "tabOrder": 700
   },
   "visual": {
     "visualType": "shape",
@@ -35,21 +35,26 @@
                 }
               }
             },
-            "fillColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#0B1F33'"
-                    }
-                  }
-                }
-              }
-            },
             "transparency": {
               "expr": {
                 "Literal": {
                   "Value": "0.0D"
+                }
+              }
+            },
+            "fillColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Key Measures"
+                        }
+                      },
+                      "Property": "Theme Band"
+                    }
+                  }
                 }
               }
             }

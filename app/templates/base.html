@@ -9,7 +9,7 @@
 <meta property="og:title" content="Pit Wall · an F1 strategy model, tested until it failed">
 <meta property="og:description" content="What a place on track is worth per circuit, and the validation that found where the strategy model breaks. By {{ author.name }}.">
 <meta name="color-scheme" content="light dark">
-<script>try{var t=localStorage.getItem("pitwall-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>try{var t=localStorage.getItem("pitwall-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;var k=localStorage.getItem("pitwall-team");if(k&&/^[a-z0-9-]+$/.test(k))document.documentElement.dataset.team=k}catch(e){}</script>
 <meta name="theme-color" content="#f4f4ef" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e1012" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
@@ -17,6 +17,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Chivo+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/static/pitwall.css?v={{ asset_version }}">
+{% if team_themes %}<style id="team-themes">
+{% for t in team_themes %}:root[data-team="{{ t.key }}"] { --stripe: {{ t.stripe }}; --finding: {{ t.light_accent }}; --finding-ink: {{ t.light_ink }}; --finding-band: {{ t.light_band }}; --sim: {{ t.sim_light }}; --sim-band: {{ t.light_sim_band }}; }
+:root[data-team="{{ t.key }}"][data-theme="dark"] { --finding: {{ t.dark_accent }}; --finding-ink: {{ t.dark_ink }}; --finding-band: {{ t.dark_band }}; --sim: {{ t.sim_dark }}; --sim-band: {{ t.dark_sim_band }}; }
+@media (prefers-color-scheme: dark) { :root[data-team="{{ t.key }}"]:not([data-theme="light"]) { --finding: {{ t.dark_accent }}; --finding-ink: {{ t.dark_ink }}; --finding-band: {{ t.dark_band }}; --sim: {{ t.sim_dark }}; --sim-band: {{ t.dark_sim_band }}; } }
+{% endfor %}</style>{% endif %}
 </head>
 <body data-page="{{ active }}">
 <!--
@@ -34,7 +39,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="strip-in">
     <a class="mark" href="/">Pit <span>Wall</span></a>
     <nav class="nav" aria-label="Dashboards">
-      {% for key, href, label in [("overview", "/", "Overview"), ("circuits", "/circuits", "Circuits"), ("tyres", "/tyres", "Tyres"), ("validation", "/validation", "Validation"), ("simulator", "/simulator", "Simulator")] %}
+      {% for key, href, label in [("overview", "/", "Overview"), ("season", "/season", "Season"), ("circuits", "/circuits", "Circuits"), ("tyres", "/tyres", "Tyres"), ("overtaking", "/overtaking", "Overtaking"), ("validation", "/validation", "Validation"), ("simulator", "/simulator", "Simulator")] %}
       <a href="{{ href }}"{% if active == key %} aria-current="page"{% endif %}>{{ label }}</a>
       {% endfor %}
     </nav>
@@ -47,6 +52,18 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <a href="mailto:{{ author.email }}">Email</a>
       </span>
     </div>
+    {% if team_themes %}
+    <div class="team-pick">
+      <i class="swatch" aria-hidden="true"></i>
+      <label class="vh" for="team-select">Team colours</label>
+      <select id="team-select" title="Team colours">
+        <option value="">Universal</option>
+        <optgroup label="{{ team_themes[0].season }} teams">
+          {% for t in team_themes %}<option value="{{ t.key }}">{{ t.team }}</option>{% endfor %}
+        </optgroup>
+      </select>
+    </div>
+    {% endif %}
     <div class="theme" role="radiogroup" aria-label="Colour theme">
       <button type="button" role="radio" aria-checked="true" data-theme-choice="system" title="Match system theme" aria-label="Match system theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.75" y="2.5" width="12.5" height="8.5" rx="1.5"/><path d="M5.5 14h5M8 11v3"/></svg></button>
       <button type="button" role="radio" aria-checked="false" data-theme-choice="light" title="Light theme" aria-label="Light theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg></button>

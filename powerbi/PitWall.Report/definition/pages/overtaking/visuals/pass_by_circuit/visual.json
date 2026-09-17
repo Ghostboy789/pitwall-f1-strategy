@@ -4,10 +4,10 @@
   "position": {
     "x": 24,
     "y": 458,
-    "z": 1600,
+    "z": 1700,
     "height": 222,
     "width": 1232,
-    "tabOrder": 1600
+    "tabOrder": 1700
   },
   "visual": {
     "visualType": "columnChart",
@@ -128,13 +128,27 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#0F7C8C'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Key Measures"
+                        }
+                      },
+                      "Property": "Theme Accent"
                     }
                   }
                 }
               }
             }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ]
           }
         }
       ],

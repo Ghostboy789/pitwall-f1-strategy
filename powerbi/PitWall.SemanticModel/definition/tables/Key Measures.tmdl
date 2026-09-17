@@ -272,13 +272,28 @@ table 'Key Measures'
 		displayFolder: Validation
 		lineageTag: 232d37e8-62c6-508e-af6e-7556b742abd8
 
-	/// Teal for places gained, coral for places lost.
-	measure 'Gain Colour' = IF ( [Avg Positions Gained] >= 0, "#0F7C8C", "#E4572E" )
+	/// Header and footer band colour for the chosen theme.
+	measure 'Theme Band' = SELECTEDVALUE ( Theme[Band Colour], "#0B1F33" )
+		displayFolder: Colours
+		lineageTag: 93091671-5761-5e62-8c75-f17f50696ba5
+
+	/// Stripe under the header: the team's own colour.
+	measure 'Theme Stripe' = SELECTEDVALUE ( Theme[Stripe Colour], "#E10600" )
+		displayFolder: Colours
+		lineageTag: 50043cde-2637-5f59-9937-ed3eb266fd89
+
+	/// Accent for bars and cards, darkened where needed to stay readable on white.
+	measure 'Theme Accent' = SELECTEDVALUE ( Theme[Accent Colour], "#0F7C8C" )
+		displayFolder: Colours
+		lineageTag: 41cfe4a1-cb66-572e-848d-9368fb1f8b79
+
+	/// Theme accent for places gained, grey for places lost.
+	measure 'Gain Colour' = IF ( [Avg Positions Gained] >= 0, [Theme Accent], "#9AA5B1" )
 		displayFolder: Colours
 		lineageTag: 67b28684-cc79-5204-9c79-81badbbd7b1c
 
-	/// Racing red where the estimate sits at its ceiling (a floor, not a point).
-	measure 'Cost Colour' = IF ( SELECTEDVALUE ( Circuit[At Ceiling] ), "#E10600", "#0F7C8C" )
+	/// Amber where the estimate sits at its ceiling (a floor, not a point); theme accent otherwise.
+	measure 'Cost Colour' = IF ( SELECTEDVALUE ( Circuit[At Ceiling] ), "#F2A541", [Theme Accent] )
 		displayFolder: Colours
 		lineageTag: 3ca0b27f-ee4e-5a82-a1ae-3e0237222384
 

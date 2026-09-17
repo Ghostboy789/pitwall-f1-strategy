@@ -186,6 +186,12 @@ def load_state() -> None:
     sv_path = config.MODELS_OUT / "strategy_validation.json"
     STATE["strategy_validation"] = json.loads(sv_path.read_text()) if sv_path.exists() else None
 
+    # Season and overtaking dashboards, pre-aggregated by scripts.export_web.
+    for key in ("web_season", "web_overtaking"):
+        path = config.MODELS_OUT / f"{key}.json"
+        STATE[key] = json.loads(path.read_text()) if path.exists() else None
+    STATE["team_themes"] = _team_themes()
+
     STATE["circuits"] = sorted(set(tp["circuit"]) & set(art["circuit_reference"]["circuit"]))
     STATE["circuit_profiles"] = _circuit_profiles(art, tp, deg)
     STATE["quality_gates"] = _read_csv("data_quality_gates.csv")
@@ -199,6 +205,19 @@ def load_state() -> None:
         len(STATE["reliability"]),
         "yes" if STATE["gate"] else "no",
     )
+
+
+def _team_themes() -> list[dict]:
+    """Team colour themes with their translucent bands, for the header switcher."""
+    from pitwall.team_colours import rgba
+
+    rows = _read_csv("team_themes.csv")
+    for r in rows:
+        r["light_band"] = rgba(r["light_accent"], 0.16)
+        r["dark_band"] = rgba(r["dark_accent"], 0.2)
+        r["light_sim_band"] = rgba(r["sim_light"], 0.14)
+        r["dark_sim_band"] = rgba(r["sim_dark"], 0.18)
+    return rows
 
 
 def _records(df: pd.DataFrame) -> list[dict]:
@@ -289,6 +308,7 @@ def _page(request: Request, name: str, active: str, **extra):
         "author": AUTHOR,
         "metrics": STATE["metrics"],
         "gate": STATE["gate"],
+        "team_themes": STATE.get("team_themes") or [],
     }
     ctx.update(extra)
     return templates.TemplateResponse(request, name, ctx)
@@ -324,6 +344,20 @@ def index(request: Request):
         strategy_validation=STATE["strategy_validation"],
         gate_evidence=STATE["gate_evidence"],
     )
+
+
+@app.get("/season", response_class=HTMLResponse)
+def season_page(request: Request):
+    if not STATE.get("ready") or not STATE.get("web_season"):
+        return templates.TemplateResponse(request, "not_ready.html", {}, status_code=503)
+    return _page(request, "season.html", "season", season=STATE["web_season"])
+
+
+@app.get("/overtaking", response_class=HTMLResponse)
+def overtaking_page(request: Request):
+    if not STATE.get("ready") or not STATE.get("web_overtaking"):
+        return templates.TemplateResponse(request, "not_ready.html", {}, status_code=503)
+    return _page(request, "overtaking.html", "overtaking", overtaking=STATE["web_overtaking"])
 
 
 @app.get("/circuits", response_class=HTMLResponse)

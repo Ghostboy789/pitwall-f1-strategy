@@ -22,6 +22,8 @@ PAGES = {
     "/tyres": "Tyre wear, circuit by circuit",
     "/validation": "The validation report",
     "/simulator": "Run a race, 600 times",
+    "/season": "Grands Prix were run",
+    "/overtaking": "chances to pass",
 }
 
 needs_artefacts = pytest.mark.skipif(
@@ -142,3 +144,32 @@ def test_optimiser_returns_legal_plans(client):
         laps = [s[0] for s in c["stops"]]
         assert laps == sorted(laps)
         assert all(1 <= lap < 53 for lap in laps)
+
+
+@needs_artefacts
+def test_team_themes_are_offered_and_styled_on_every_page(client):
+    themes = main.STATE["team_themes"]
+    assert len(themes) >= 10
+    for path in PAGES:
+        html = client.get(path).text
+        assert '<select id="team-select"' in html
+        for t in themes:
+            assert f'<option value="{t["key"]}">' in html
+            assert f':root[data-team="{t["key"]}"]' in html
+        # Pass and fail keep their own colours whatever team is picked.
+        assert "--good:" not in html.split('<style id="team-themes">')[1].split("</style>")[0]
+
+
+@needs_artefacts
+def test_season_and_overtaking_totals_match_the_pipeline(client):
+    m = main.STATE["metrics"]
+    season = _page_data(client.get("/season").text)["season"]
+    assert len(season["races"]) == m["n_races"]
+    assert sum(r["laps"] for r in season["races"]) == m["n_laps_raw"]
+    assert sum(r["passes"] for r in season["races"]) == m["n_passes"]
+    assert season["drivers"]["all"]["all"] == m["n_drivers"]
+
+    ot = _page_data(client.get("/overtaking").text)["overtaking"]
+    assert sum(r["n"] for r in ot["gap"]) == m["n_opportunities"]
+    assert sum(r["passes"] for r in ot["circuit"]) == m["n_passes"]
+    assert ot["model"]["auc"] == pytest.approx(m["overtaking_auc"])

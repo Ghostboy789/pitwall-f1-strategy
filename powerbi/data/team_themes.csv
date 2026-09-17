@@ -1,0 +1,12 @@
+key,team,season,band,stripe,accent,light_accent,light_ink,dark_accent,dark_ink,sim_light,sim_dark,source
+alpine,Alpine,2026,#2173b8,#ff87bc,#2173b8,#2173b8,#2173b8,#2173b8,#247fcb,#7b3fc4,#b794f6,Alpine F1 Team logo artwork (#2173B8); BWT pink of the team livery
+aston-martin,Aston Martin,2026,#00665e,#cedc00,#00665e,#00665e,#00665e,#00736a,#008c81,#2d5bd2,#7d9ef6,"astonmartinf1.com stylesheet: racing green #00665E, lime #CEDC00"
+audi,Audi,2026,#1a1a1a,#ff2d00,#ff2d00,#ff2d00,#d92600,#ff2d00,#ff2d00,#2d5bd2,#7d9ef6,"audif1.com CSS variable --color-af1-lava-red #FF2D00, carbon black"
+cadillac,Cadillac,2026,#111111,#c8ccd0,#111111,#111111,#111111,#646464,#7b7b7b,#2d5bd2,#7d9ef6,cadillacf1team.com: black #111111 and white livery; silver stripe
+ferrari,Ferrari,2026,#da291c,#ffcc00,#da291c,#da291c,#d5281b,#da291c,#e43c30,#2d5bd2,#7d9ef6,ferrari.com stylesheet: Ferrari red #DA291C (Pantone 485 C); shield yellow
+haas,Haas,2026,#111111,#e6002d,#e6002d,#e6002d,#de002c,#e6002d,#f80030,#2d5bd2,#7d9ef6,haasf1team.com: red #E6002D on black and white
+mclaren,McLaren,2026,#1e1e1e,#ff8000,#ff8000,#e87400,#ad5700,#ff8000,#ff8000,#2d5bd2,#7d9ef6,mclaren.com stylesheet: papaya #FF8000; anthracite
+mercedes,Mercedes,2026,#000000,#00a19c,#00a19c,#00a19c,#007d79,#00a19c,#00a19c,#2d5bd2,#7d9ef6,"mercedesamgf1.com: theme-color #000000, PETRONAS teal #00A19C"
+racing-bulls,Racing Bulls,2026,#1434cb,#db0a40,#1434cb,#1434cb,#1434cb,#3152eb,#5771ee,#7b3fc4,#b794f6,"visacashapprb.com stylesheet: blue #1434CB, red #DB0A40"
+red-bull-racing,Red Bull Racing,2026,#001e3c,#db0a40,#001e3c,#001e3c,#001e3c,#0062c3,#0079f1,#7b3fc4,#b794f6,"redbullracing.com: theme-color navy #001E3C, red #DB0A40, yellow #FCD700"
+williams,Williams,2026,#0230be,#b2c7ff,#0056ff,#0056ff,#0056ff,#0056ff,#2b73ff,#7b3fc4,#b794f6,"williamsf1.com CSS variables: brand primary #0230BE, highlight #0056FF, #B2C7FF"

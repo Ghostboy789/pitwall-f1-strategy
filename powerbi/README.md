@@ -14,6 +14,8 @@ To work offline, set the `DataFolder` parameter (Transform data → Edit paramet
 
 **Dark mode:** View → Themes → Browse for themes → `powerbi/themes/PitWall-Dark.json`. All report colours come from the theme, so the whole report switches.
 
+**Team colours:** the **Team colours** menu in every page header re-skins the report (header band, stripe and chart accents) in any 2026 team's colours, or the default *Universal* scheme. The menus are synced, so a choice on one page carries to all five. The colours come from `powerbi/data/team_themes.csv`, the same file the website uses.
+
 ## Pages
 
 | Page | Question it answers |
@@ -28,6 +30,12 @@ To work offline, set the `DataFolder` parameter (Transform data → Edit paramet
 |---|---|
 | ![Circuit intelligence](../docs/powerbi/2-circuit-intelligence-light.png) | ![Tyres and strategy](../docs/powerbi/3-tyres-strategy-light.png) |
 | ![Overtaking model](../docs/powerbi/4-overtaking-model-light.png) | ![Model validation](../docs/powerbi/5-model-validation-light.png) |
+
+Team colours (Ferrari, Red Bull Racing):
+
+| | |
+|---|---|
+| ![Season overview in Ferrari colours](../docs/powerbi/team-ferrari.png) | ![Overtaking model in Red Bull Racing colours](../docs/powerbi/team-red-bull-racing.png) |
 
 Dark theme:
 
@@ -47,8 +55,9 @@ Dark theme:
 
 - **Facts:** `Lap` (203,644 rows), `Overtaking Opportunity` (64,646), `Stint` (10,421), `Result` (3,723).
 - **Dimensions:** `Race`, `Circuit`, `Driver`, `Tyre Compound`. The compound is ranked within each event because Pirelli's labels are relative.
+- **Theme:** a disconnected table of team colour schemes behind the Team colours menu.
 - **Evidence tables:** tyre-wear estimates under four estimators, and the V1–V6 validation outputs.
-- **Key Measures:** 54 DAX measures in display folders, including filter-aware headline-circuit selection, the Monaco-vs-COTA ratio, and colour measures for conditional formatting.
+- **Key Measures:** 57 DAX measures in display folders, including filter-aware headline-circuit selection, the Monaco-vs-COTA ratio, and colour measures that drive conditional formatting and the team themes.
 
 The model is stored as TMDL and the report as PBIR, so every table, measure and visual is a readable text file that diffs in git. `scripts/export_powerbi.py` rebuilds `powerbi/data` from the pipeline outputs.
 

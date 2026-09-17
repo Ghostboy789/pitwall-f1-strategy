@@ -23,6 +23,18 @@
     t.textContent = str;
     return t;
   }
+  /* Shorten a label that would run past maxW; the full text stays in a tooltip. */
+  function fit(t, maxW) {
+    const full = t.textContent;
+    if (!t.getComputedTextLength || t.getComputedTextLength() <= maxW) return t;
+    let str = full;
+    while (str.length > 3 && t.getComputedTextLength() > maxW) {
+      str = str.slice(0, -1);
+      t.textContent = str.trimEnd() + "…";
+    }
+    el("title", {}, t).textContent = full;
+    return t;
+  }
   function svg(mount, w, h) {
     mount.innerHTML = "";
     return el("svg", { class: "chart", viewBox: `0 0 ${w} ${h}`, width: w, height: h, role: "img" }, mount);
@@ -98,6 +110,22 @@
   }
   themeButtons.forEach((b) => b.addEventListener("click", () => applyTheme(b.dataset.themeChoice)));
   applyTheme(root.dataset.theme || "system");
+
+  /* team colours: restyle the accent everywhere; meaning colours stay fixed */
+  const teamSelect = $("team-select");
+  if (teamSelect) {
+    const known = new Set(Array.from(teamSelect.options).map((o) => o.value));
+    const applyTeam = (key) => {
+      if (key && known.has(key)) root.dataset.team = key; else delete root.dataset.team;
+      teamSelect.value = root.dataset.team || "";
+      try {
+        if (root.dataset.team) localStorage.setItem("pitwall-team", root.dataset.team);
+        else localStorage.removeItem("pitwall-team");
+      } catch (e) { /* storage unavailable: the choice lasts for this page only */ }
+    };
+    teamSelect.addEventListener("change", () => applyTeam(teamSelect.value));
+    applyTeam(root.dataset.team || "");
+  }
 
   /* lap progress under the header */
   const lap = document.querySelector(".lap");
@@ -353,12 +381,141 @@
       const x = scale(0, Math.max(...data.map((d) => d[key])), lw, W - 48);
       data.forEach((d, i) => {
         const cy = 4 + i * rowH + rowH / 2;
-        text(s, lw - 10, cy + 4, pretty(d[labelKey]), "lab", "end");
+        fit(text(s, lw - 10, cy + 4, pretty(d[labelKey]), "lab", "end"), lw - 14);
         el("rect", { x: lw, y: cy - 5, width: Math.max(x(d[key]) - lw, 1), height: 10, rx: 2, fill: "var(--ink)", "fill-opacity": 0.78 }, s);
         text(s, x(d[key]) + 8, cy + 4, fmtv(d[key]), "tick");
       });
     });
   }
+  /* Grouped columns: one group per category, one bar per series. */
+  function columns(mount, cats, series, opts) {
+    if (!mount) return;
+    const o = Object.assign({ fmt: (v) => f(v, 1), height: 0.5, labels: true, tipLabel: (c) => c }, opts || {});
+    responsive(mount, (W) => {
+      const H = Math.round(clamp(W * o.height, 220, 320));
+      const m = { t: 22, r: 10, b: o.axisTitle ? 44 : 30, l: 44 };
+      const s = svg(mount, W, H);
+      const vals = series.flatMap((sr) => sr.values).filter((v) => v != null);
+      const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) * 1.12 || 1;
+      const y = scale(lo, hi, H - m.b, m.t);
+      for (const v of ticks(lo, hi, 4)) {
+        el("line", { class: v === 0 ? "axis" : "gridline", x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }, s);
+        text(s, m.l - 8, y(v) + 4, o.tick ? o.tick(v) : o.fmt(v), "tick", "end");
+      }
+      const band = (W - m.l - m.r) / cats.length;
+      const gap = Math.min(10, band * 0.18), bw = (band - gap * 2) / series.length;
+      const every = Math.ceil(cats.length / Math.max(1, Math.floor((W - m.l) / 46)));
+      cats.forEach((c, i) => {
+        const x0 = m.l + i * band + gap;
+        series.forEach((sr, k) => {
+          const v = sr.values[i];
+          if (v == null) return;
+          const top = y(Math.max(v, 0)), bot = y(Math.min(v, 0));
+          const col = typeof sr.color === "function" ? sr.color(v, i) : sr.color;
+          el("rect", { x: x0 + k * bw + 1, y: top, width: Math.max(bw - 2, 1), height: Math.max(bot - top, 1), rx: 2, fill: col }, s);
+          if (o.labels && bw > 22) text(s, x0 + k * bw + bw / 2, v >= 0 ? top - 5 : bot + 12, o.fmt(v), "tick", "middle");
+        });
+        if (i % every === 0) text(s, m.l + i * band + band / 2, H - m.b + 17, String(c), "tick", "middle");
+        const h = el("rect", { class: "hit", x: m.l + i * band, y: m.t, width: band, height: H - m.t - m.b }, s);
+        h.addEventListener("pointermove", (e) => tip(`<b>${o.tipLabel(c)}</b>` + series.map((sr) => `<br><span class="k">${sr.name}</span> <b>${sr.values[i] == null ? "–" : o.fmt(sr.values[i])}</b>` + (sr.extra ? ` <span class="k">${sr.extra(i)}</span>` : "")).join(""), e));
+        h.addEventListener("pointerleave", untip);
+      });
+      if (o.axisTitle) text(s, (m.l + W - m.r) / 2, H - 4, o.axisTitle, "axis-t", "middle");
+    });
+  }
+
+  /* 100% stacked columns. */
+  function stacked(mount, cats, parts, highlight) {
+    if (!mount) return;
+    responsive(mount, (W) => {
+      const H = Math.round(clamp(W * 0.5, 220, 320));
+      const m = { t: 14, r: 10, b: 30, l: 44 };
+      const s = svg(mount, W, H);
+      const y = scale(0, 1, H - m.b, m.t);
+      for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+        el("line", { class: v === 0 ? "axis" : "gridline", x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }, s);
+        text(s, m.l - 8, y(v) + 4, pct(v, 0), "tick", "end");
+      }
+      const band = (W - m.l - m.r) / cats.length, gap = Math.min(10, band * 0.2);
+      const every = Math.ceil(cats.length / Math.max(1, Math.floor((W - m.l) / 46)));
+      cats.forEach((c, i) => {
+        const total = parts.reduce((a, p) => a + p.values[i], 0) || 1;
+        const dim = highlight != null && String(c) !== String(highlight);
+        let acc = 0;
+        parts.forEach((p) => {
+          const share = p.values[i] / total;
+          el("rect", { x: m.l + i * band + gap, y: y(acc + share), width: band - gap * 2, height: Math.max(y(acc) - y(acc + share), 0), fill: p.color, stroke: p.stroke || "none", "stroke-width": p.stroke ? 1 : 0, "fill-opacity": dim ? 0.3 : 1, "stroke-opacity": dim ? 0.3 : 1 }, s);
+          acc += share;
+        });
+        if (i % every === 0) text(s, m.l + i * band + band / 2, H - m.b + 17, String(c), "tick", "middle");
+        const h = el("rect", { class: "hit", x: m.l + i * band, y: m.t, width: band, height: H - m.t - m.b }, s);
+        h.addEventListener("pointermove", (e) => tip(`<b>${c}</b>` + parts.map((p) => `<br><span class="k">${p.name}</span> <b>${pct(p.values[i] / total)}</b>`).join(""), e));
+        h.addEventListener("pointerleave", untip);
+      });
+    });
+  }
+
+  /* Two channels on one season axis: bars on top, a line beneath. */
+  function twoChannel(mount, cats, top, bottom, highlight) {
+    if (!mount) return;
+    responsive(mount, (W) => {
+      const H = Math.round(clamp(W * 0.62, 280, 380));
+      const m = { l: 44, r: 12 }, gapY = 30, tH = (H - 40 - gapY) * 0.55, bH = H - 40 - gapY - tH;
+      const s = svg(mount, W, H);
+      const band = (W - m.l - m.r) / cats.length, xc = (i) => m.l + i * band + band / 2;
+      const chan = (y0, h, series, kind) => {
+        const hi = Math.max(...series.values) * 1.15, lo = kind === "line" ? Math.min(...series.values) * 0.85 : 0;
+        const y = scale(lo, hi, y0 + h, y0);
+        text(s, 0, y0 - 8, series.name, "lab focus");
+        for (const v of ticks(lo, hi, 3)) {
+          el("line", { class: "gridline", x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }, s);
+          text(s, m.l - 8, y(v) + 4, series.tick(v), "tick", "end");
+        }
+        if (kind === "bar") {
+          series.values.forEach((v, i) => {
+            const dim = highlight != null && String(cats[i]) !== String(highlight);
+            el("rect", { x: m.l + i * band + band * 0.2, y: y(v), width: band * 0.6, height: y0 + h - y(v), rx: 2, fill: "var(--finding)", "fill-opacity": dim ? 0.3 : 1 }, s);
+          });
+        } else {
+          el("polyline", { points: series.values.map((v, i) => `${xc(i)},${y(v)}`).join(" "), fill: "none", stroke: "var(--ink)", "stroke-width": 2 }, s);
+          series.values.forEach((v, i) => {
+            const on = highlight != null && String(cats[i]) === String(highlight);
+            el("circle", { cx: xc(i), cy: y(v), r: on ? 5.5 : 3.5, fill: on ? "var(--finding)" : "var(--pane)", stroke: on ? "var(--finding)" : "var(--ink)", "stroke-width": 2 }, s);
+          });
+        }
+      };
+      chan(24, tH, top, "bar");
+      chan(24 + tH + gapY + 10, bH - 10, bottom, "line");
+      const every = Math.ceil(cats.length / Math.max(1, Math.floor((W - m.l) / 46)));
+      cats.forEach((c, i) => {
+        if (i % every === 0) text(s, xc(i), H - 6, String(c), "tick", "middle");
+        const h = el("rect", { class: "hit", x: m.l + i * band, y: 0, width: band, height: H }, s);
+        h.addEventListener("pointermove", (e) => tip(`<b>${c}</b><br><span class="k">${top.name}</span> <b>${top.fmt(top.values[i])}</b><br><span class="k">${bottom.name}</span> <b>${bottom.fmt(bottom.values[i])}</b>`, e));
+        h.addEventListener("pointerleave", untip);
+      });
+    });
+  }
+
+  /* Ranked horizontal bars in the accent colour, value at the bar end. */
+  function hbars(mount, rows, fmtv, label) {
+    if (!mount || !rows) return;
+    responsive(mount, (W) => {
+      const rowH = 21, lw = Math.min(160, W * 0.38), H = rows.length * rowH + 8;
+      const s = svg(mount, W, H);
+      const hi = Math.max(...rows.map((d) => d.v)) || 1;
+      const x = scale(0, hi, lw, W - 52);
+      rows.forEach((d, i) => {
+        const cy = 4 + i * rowH + rowH / 2;
+        fit(text(s, lw - 10, cy + 4, d.name, "lab", "end"), lw - 14);
+        el("rect", { x: lw, y: cy - 5, width: Math.max(x(d.v) - lw, 1), height: 10, rx: 2, fill: "var(--finding)" }, s);
+        text(s, x(d.v) + 8, cy + 4, fmtv(d.v), "tick");
+        const h = el("rect", { class: "hit", x: 0, y: cy - rowH / 2, width: W, height: rowH }, s);
+        h.addEventListener("pointermove", (e) => tip(`<b>${d.name}</b><br><span class="k">${label}</span> <b>${fmtv(d.v)}</b><br><span class="k">Opportunities</span> <b>${d.n.toLocaleString()}</b>`, e));
+        h.addEventListener("pointerleave", untip);
+      });
+    });
+  }
+
   const NAMES = {};
   (DATA.profiles || []).forEach((p) => { NAMES[p.key] = p.name; });
   function pretty(k) { return NAMES[k] || String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()); }
@@ -383,6 +540,8 @@
   if (page === "validation") {
     rankedBars($("det-chart"), DATA.detector, "mean_passes_per_race", "circuit", (v) => f(v, 1));
   }
+  if (page === "season") seasonPage();
+  if (page === "overtaking") overtakingPage();
   if (page === "circuits") circuitsPage();
   if (page === "tyres") tyresPage();
   if (page === "simulator") simulatorPage();
@@ -581,7 +740,7 @@
         data.forEach((c, i) => {
           const cy = top + i * rowH + rowH / 2;
           if (i % 2) el("rect", { x: 0, y: cy - rowH / 2, width: W, height: rowH, fill: "var(--stripe)" }, s);
-          text(s, lw - 10, cy + 4, c.name, "lab", "end");
+          fit(text(s, lw - 10, cy + 4, c.name, "lab", "end"), lw - 14);
           ranks.forEach((r, j) => {
             const d = c.cells[r];
             if (!d || d[k] == null) return;
@@ -812,5 +971,119 @@
     $("sim-best").addEventListener("click", best);
     new ResizeObserver(() => drawStrip()).observe(strip);
     loadCircuit();
+  }
+
+  /* ---------------------------------------------------------------- season */
+
+  function seasonPage() {
+    const S = DATA.season;
+    const selSeason = $("s-season"), selType = $("s-type");
+    const sum = (rows, k) => rows.reduce((a, r) => a + r[k], 0);
+    const nf = (v) => Math.round(v).toLocaleString();
+    const tb = document.querySelector("#s-table tbody");
+    let table = [], sortKey = "ppr", dir = -1;
+
+    function renderTable() {
+      const rows = table.slice().sort((p, q) => (typeof p[sortKey] === "string" ? dir * p[sortKey].localeCompare(q[sortKey]) : dir * (p[sortKey] - q[sortKey])));
+      tb.innerHTML = rows.map((r) => `<tr><td>${r.circuit}</td><td>${r.type}</td><td class="n">${r.races}</td><td class="n">${f(r.ppr)}</td><td class="n">${f(r.spc, 2)}</td><td class="n">${pct(r.caution)}</td><td class="n">${pct(r.finish)}</td></tr>`).join("");
+    }
+
+    function draw() {
+      const season = selSeason.value, type = selType.value;
+      const typed = S.races.filter((r) => type === "all" || r.circuit_type === type);
+      const rows = typed.filter((r) => season === "all" || String(r.season) === season);
+
+      $("s-races").textContent = nf(rows.length);
+      $("s-laps").textContent = nf(sum(rows, "laps"));
+      $("s-drivers").textContent = String((S.drivers[type] || {})[season] ?? "–");
+      $("s-stops").textContent = f(sum(rows, "pit_stops") / (sum(rows, "car_starts") || 1), 2);
+      $("s-passes").textContent = f(sum(rows, "passes") / (rows.length || 1), 1);
+      $("s-caution").textContent = pct(1 - sum(rows, "green_laps") / (sum(rows, "laps") || 1));
+
+      const seasons = S.seasons;
+      const bySeason = seasons.map((y) => typed.filter((r) => r.season === y));
+      const hl = season === "all" ? null : season;
+      twoChannel($("s-trend"), seasons,
+        { name: "Passes per race", values: bySeason.map((r) => sum(r, "passes") / (r.length || 1)), tick: (v) => f(v, 0), fmt: (v) => f(v, 1) },
+        { name: "Pit stops per car", values: bySeason.map((r) => sum(r, "pit_stops") / (sum(r, "car_starts") || 1)), tick: (v) => f(v, 1), fmt: (v) => f(v, 2) },
+        hl);
+      stacked($("s-tyres"), seasons, [
+        { name: "Softest", color: "var(--soft)", values: bySeason.map((r) => sum(r, "SOFTEST")) },
+        { name: "Middle", color: "var(--middle)", values: bySeason.map((r) => sum(r, "MIDDLE")) },
+        { name: "Hardest", color: "var(--hard)", stroke: "var(--hard-stroke)", values: bySeason.map((r) => sum(r, "HARDEST")) },
+        { name: "Wet", color: "var(--wet)", values: bySeason.map((r) => sum(r, "WET")) },
+      ], hl);
+
+      const grid = [];
+      for (let g = 1; g <= 20; g++) {
+        const cells = S.grid.filter((d) => d.grid === g && (season === "all" || String(d.season) === season));
+        const n = cells.reduce((a, d) => a + d.n, 0);
+        grid.push(n ? cells.reduce((a, d) => a + d.gained, 0) / n : null);
+      }
+      columns($("s-grid"), Array.from({ length: 20 }, (_, i) => i + 1),
+        [{ name: "Average places gained", values: grid, color: (v) => (v >= 0 ? "var(--finding)" : "var(--other)") }],
+        { fmt: (v) => (v > 0 ? "+" : "") + f(v, 1), tick: (v) => (v > 0 ? "+" : "") + f(v, 0), labels: true, height: 0.3, axisTitle: "starting position", tipLabel: (c) => "Grid slot " + c });
+
+      const circuits = {};
+      rows.forEach((r) => {
+        const c = (circuits[r.circuit] = circuits[r.circuit] || { circuit: r.circuit, type: r.circuit_type, races: 0, passes: 0, stops: 0, starts: 0, laps: 0, green: 0, classified: 0 });
+        c.races += 1; c.passes += r.passes; c.stops += r.pit_stops; c.starts += r.car_starts; c.laps += r.laps; c.green += r.green_laps; c.classified += r.classified;
+      });
+      table = Object.values(circuits).map((c) => ({ circuit: c.circuit, type: c.type, races: c.races, ppr: c.passes / c.races, spc: c.stops / (c.starts || 1), caution: 1 - c.green / (c.laps || 1), finish: c.classified / (c.starts || 1) }));
+      renderTable();
+    }
+
+    document.querySelectorAll("#s-table th").forEach((th) => {
+      th.querySelector("button").addEventListener("click", () => {
+        const k = th.dataset.k;
+        dir = sortKey === k ? -dir : k === "circuit" || k === "type" ? 1 : -1;
+        sortKey = k;
+        document.querySelectorAll("#s-table th").forEach((o) => o.setAttribute("aria-sort", "none"));
+        th.setAttribute("aria-sort", dir > 0 ? "ascending" : "descending");
+        renderTable();
+      });
+    });
+    selSeason.addEventListener("change", draw);
+    selType.addEventListener("change", draw);
+    draw();
+  }
+
+  /* ---------------------------------------------------------------- overtaking */
+
+  function overtakingPage() {
+    const O = DATA.overtaking;
+    const sel = $("o-season");
+    reliability($("rel-chart"), DATA.rel);
+    const count = (rows) => rows.reduce((a, r) => a + r.n, 0);
+    const rate = (rows) => (count(rows) ? rows.reduce((a, r) => a + r.passes, 0) / count(rows) : null);
+
+    function draw() {
+      const season = sel.value;
+      const inSeason = (r) => season === "all" || String(r.season) === season;
+      const gap = O.gap.filter(inSeason), pace = O.pace.filter(inSeason), circ = O.circuit.filter(inSeason);
+      const n = count(gap), p = gap.reduce((a, r) => a + r.passes, 0);
+      $("o-opps").textContent = n.toLocaleString();
+      $("o-passes").textContent = p.toLocaleString();
+      $("o-rate").textContent = pct(p / (n || 1));
+
+      // A rate from a handful of attempts is noise, so cells under 50 attempts are left blank.
+      const drsSeries = (label, col) => {
+        const cells = O.gap_bands.map((b) => gap.filter((r) => r.gap_band === b && r.drs === label));
+        return { name: label, color: col, values: cells.map((c) => (count(c) >= 50 ? rate(c) : null)), extra: (i) => count(cells[i]).toLocaleString() + " tries" };
+      };
+      columns($("o-gap"), O.gap_bands, [drsSeries("DRS open", "var(--finding)"), drsSeries("No DRS", "var(--other)")],
+        { fmt: (v) => pct(v, 0), tick: (v) => pct(v, 0), height: 0.55, axisTitle: "gap to the car ahead" });
+      const paceCells = O.pace_bands.map((b) => pace.filter((r) => r.pace_band === b));
+      columns($("o-pace"), O.pace_bands, [{ name: "Pass rate", color: "var(--finding)", values: paceCells.map(rate), extra: (i) => count(paceCells[i]).toLocaleString() + " tries" }],
+        { fmt: (v) => pct(v, 1), tick: (v) => pct(v, 0), height: 0.55, axisTitle: "follower faster by, s per lap" });
+
+      const byC = {};
+      circ.forEach((r) => { const c = (byC[r.circuit] = byC[r.circuit] || { name: r.circuit, n: 0, passes: 0 }); c.n += r.n; c.passes += r.passes; });
+      const rows = Object.values(byC).filter((c) => c.n >= 100).map((c) => ({ name: c.name, n: c.n, v: c.passes / c.n })).sort((a, b) => b.v - a.v);
+      $("o-circ-unit").textContent = (season === "all" ? "all seasons" : season) + " · circuits with 100+ opportunities";
+      hbars($("o-circuit"), rows, (v) => pct(v, 1), "Pass rate");
+    }
+    sel.addEventListener("change", draw);
+    draw();
   }
 })();

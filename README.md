@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/Ghostboy789/pitwall-f1-strategy/actions/workflows/ci.yml/badge.svg)](https://github.com/Ghostboy789/pitwall-f1-strategy/actions/workflows/ci.yml)
 ![Python 3.11](https://img.shields.io/badge/python-3.11-15171a)
-![Tests](https://img.shields.io/badge/tests-106%20passing-0e8a8c)
+![Tests](https://img.shields.io/badge/tests-118%20passing-0e8a8c)
 
 **[Live dashboard →](https://pitwall-f1-strategy.onrender.com)** · by **Medhansh Shekhawat** · [LinkedIn](https://www.linkedin.com/in/medhansh-shekhawat) · [GitHub](https://github.com/Ghostboy789)
 
@@ -74,7 +74,7 @@ Ruled out on the way, each with a number: simulation noise (0.33 s of a 16 s gai
 
 ---
 
-## Five dashboards
+## Seven dashboards
 
 | | |
 |---|---|
@@ -82,12 +82,16 @@ Ruled out on the way, each with a number: simulation noise (0.33 s of a 16 s gai
 | ![Overview in dark mode](docs/overview-dark.png) | ![Circuits dashboard](docs/circuits.png) |
 | **Tyres** · wear for every circuit and compound under each estimator, with race-clustered intervals | **Simulator** · drag pit stops along a lap strip and run 600 races |
 | ![Tyres dashboard](docs/tyres.png) | ![Race simulator](docs/simulator.png) |
+| **Season** · in Ferrari colours | **Overtaking** · in Red Bull Racing colours, dark mode |
+| ![Season page in Ferrari colours](docs/season-ferrari.png) | ![Overtaking page in Red Bull Racing colours](docs/overtaking-red-bull-racing.png) |
 
-The **Validation** page is the full model-risk report: V1–V6 status, calibration, the gate, real-versus-simulated costs, data-quality gates, and the 23 races excluded by rules written in advance. Light and dark themes follow the visitor's system setting, with a toggle.
+The **Validation** page is the full model-risk report: V1–V6 status, calibration, the gate, real-versus-simulated costs, data-quality gates, and the 23 races excluded by rules written in advance. **Season** and **Overtaking** bring the Power BI report's descriptive pages to the site, with season and circuit-type filters.
+
+Light and dark themes follow the visitor's system setting, with a toggle. A **team colours** menu re-skins every page in any 2026 team's colours, or the default *Universal* scheme. Each colour was read from the team's official website or logo and is held to its source by a test (CIEDE2000 ΔE ≤ 2); accents are only lightened or darkened where they would fail WCAG contrast.
 
 ### Power BI report
 
-The same data as a five-page Power BI report: a star schema over 203,644 laps, 54 DAX measures, light and dark themes. Every KPI is checked against the Python pipeline with 48 DAX queries. **[Open it, and see how it was built →](powerbi/README.md)**
+The same data as a five-page Power BI report: a star schema over 203,644 laps, 57 DAX measures, light and dark themes, and the same team-colour menu on every page. Every KPI is checked against the Python pipeline with 48 DAX queries. **[Open it, and see how it was built →](powerbi/README.md)**
 
 ![Power BI: circuit intelligence](docs/powerbi/2-circuit-intelligence-light.png)
 
@@ -147,7 +151,7 @@ python -m scripts.run_audit --races 40
 python -m scripts.validate_strategy   # V6
 python -m scripts.export_powerbi      # Power BI data extract
 uvicorn app.main:app --reload         # http://127.0.0.1:8000
-pytest                                # 106 tests
+pytest                                # 118 tests
 ```
 
 Fitted artefacts are committed in `models_out/`, so the dashboards run from a clean clone without re-ingesting. One `Dockerfile` binding `$PORT` runs on Render, Fly, Railway or Hugging Face Spaces unchanged.
@@ -168,7 +172,7 @@ pitwall/
   trackposition.py                    the headline metric
 app/                                  FastAPI + Jinja2 + hand-built SVG dashboards
 powerbi/                              Power BI project (TMDL model, PBIR report, data extract, themes)
-tests/                                106 tests
+tests/                                118 tests
 ```
 
 Full method, every trap, twelve named limitations and every deviation from the plan: **[`METHODOLOGY.md`](METHODOLOGY.md)**. Data provenance and prior art: [`SOURCES.md`](SOURCES.md).

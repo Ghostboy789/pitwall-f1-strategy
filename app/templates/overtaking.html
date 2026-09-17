@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Overtaking · Pit Wall{% endblock %}
+{% block description %}{{ "{:,}".format(metrics.n_opportunities) }} chances to pass in Formula 1: what decides them (gap, DRS, pace advantage, circuit) and how well the overtaking model's probabilities are calibrated.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-ot">
+  <div class="claim">
+    <h1 id="h-ot">{{ "{:,}".format(metrics.n_opportunities) }} chances to pass, and what decided them.</h1>
+    <p class="plain">Every lap a car ran within reach of the car ahead is an opportunity. Most were never taken. The gap, DRS and a pace advantage decide which ones were.</p>
+  </div>
+  <div class="claim">
+    <p>A pass is counted when the following car is ahead at the end of the lap, on a green lap, without a pit stop explaining it. The overtaking model predicts that outcome and is scored out of fold, one race held out at a time, so it is never graded on races it learned from.</p>
+    <p class="aside">The season and circuit filters re-total the observed rates. The model scores are for all races, as fitted.</p>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Overtaking summary">
+  <figure class="pane" style="margin:0">
+    <div class="controls">
+      <div class="field">
+        <label for="o-season">Season</label>
+        <select id="o-season">
+          <option value="all">All seasons</option>
+          {% for s in overtaking.seasons|reverse %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <dl class="readout six" aria-live="polite">
+      <div><dt>Opportunities</dt><dd id="o-opps">–</dd></div>
+      <div><dt>Passes</dt><dd id="o-passes">–</dd></div>
+      <div><dt>Pass rate</dt><dd id="o-rate">–</dd></div>
+      <div><dt>Model AUC</dt><dd>{{ "%.3f"|format(overtaking.model.auc) }}</dd></div>
+      <div><dt>Brier score</dt><dd>{{ "%.4f"|format(overtaking.model.brier) }}</dd></div>
+      <div><dt>Calibration error</dt><dd>{{ "%.4f"|format(overtaking.model.ece) }}</dd></div>
+    </dl>
+  </figure>
+</section>
+
+<section class="run wide" aria-label="What decides a pass">
+  <div class="twin">
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Pass rate by gap to the car ahead</h3><span class="unit">with and without DRS</span></figcaption>
+      <div class="legend" aria-hidden="true">
+        <span><i class="dot" style="background:var(--finding)"></i>DRS open</span>
+        <span><i class="dot" style="background:var(--other)"></i>No DRS</span>
+      </div>
+      <div class="pane-body"><div id="o-gap" aria-hidden="true"></div></div>
+    </figure>
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Pass rate by pace advantage</h3><span class="unit">follower's clean-air pace, s per lap</span></figcaption>
+      <div class="pane-body"><div id="o-pace" aria-hidden="true"></div></div>
+      <div class="pane-foot"><p>Opportunities without a clean-air pace estimate for both cars are left out of this panel only.</p></div>
+    </figure>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Calibration and circuits">
+  <div class="twin">
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Is a 30% chance really 30%?</h3><span class="unit">out-of-fold · 10 bins</span></figcaption>
+      <div class="pane-body"><div id="rel-chart" aria-hidden="true"></div></div>
+      <div class="pane-foot"><p>Points on the dashed diagonal mean the model's probabilities can be used as probabilities, which is what pricing track position needs.</p></div>
+    </figure>
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Observed pass rate by circuit</h3><span class="unit" id="o-circ-unit">all seasons</span></figcaption>
+      <div class="pane-body"><div id="o-circuit" aria-hidden="true"></div></div>
+    </figure>
+  </div>
+</section>
+{% endblock %}
+
+{% block data %}{{ {"overtaking": overtaking, "rel": overtaking.calibration}|tojson }}{% endblock %}

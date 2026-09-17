@@ -1,0 +1,65 @@
+/// Report colour themes: Universal plus every team on the latest grid, in each team's own brand colours (see pitwall/team_colours.py for sources).
+table Theme
+	lineageTag: e9d63172-3422-52ee-9d4d-73c522d20a50
+
+	column Theme
+		dataType: string
+		lineageTag: ff76a391-7222-5905-b3b9-8f1dc2ceab76
+		summarizeBy: none
+		sourceColumn: team
+		sortByColumn: 'Theme Order'
+
+		annotation SummarizationSetBy = User
+
+	column 'Theme Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 20732cf6-ff7e-5089-a69e-eb223ff29973
+		summarizeBy: none
+		sourceColumn: order
+
+		annotation SummarizationSetBy = User
+
+	column 'Band Colour'
+		dataType: string
+		isHidden
+		lineageTag: 9314f7c5-7bf9-5e31-9c1e-f782eb986364
+		summarizeBy: none
+		sourceColumn: band
+
+		annotation SummarizationSetBy = User
+
+	column 'Stripe Colour'
+		dataType: string
+		isHidden
+		lineageTag: 1833688f-cff3-5a86-939e-5b9e3e2367d9
+		summarizeBy: none
+		sourceColumn: stripe
+
+		annotation SummarizationSetBy = User
+
+	column 'Accent Colour'
+		dataType: string
+		isHidden
+		lineageTag: 5c775705-4beb-517d-aeaa-996bcfe894d2
+		summarizeBy: none
+		sourceColumn: light_accent
+
+		annotation SummarizationSetBy = User
+
+	partition Theme = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("team_themes.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Teams = Table.SelectColumns(Promoted, {"team", "band", "stripe", "light_accent"}),
+				    Universal = #table(type table [team = text, band = text, stripe = text, light_accent = text], {{"Universal", "#0B1F33", "#E10600", "#0F7C8C"}}),
+				    Combined = Table.Combine({Universal, Teams}),
+				    Indexed = Table.AddIndexColumn(Combined, "order", 1, 1, Int64.Type),
+				    Typed = Table.TransformColumnTypes(Indexed, {{"team", type text}, {"band", type text}, {"stripe", type text}, {"light_accent", type text}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

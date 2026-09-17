@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Season · Pit Wall{% endblock %}
+{% block description %}How {{ metrics.n_races }} Formula 1 Grands Prix were run, season by season: passes per race, pit stops per car, the tyre mix and the places gained from each grid slot.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-season">
+  <div class="claim">
+    <h1 id="h-season">How {{ metrics.n_races }} Grands Prix were run.</h1>
+    <p class="plain">Nine seasons of timing data, counted rather than modelled: how often cars stopped, how often they passed, which tyres they ran and what a grid slot was worth by the flag.</p>
+  </div>
+  <div class="claim">
+    <p>Every number on this page is a count or an average from the lap, stint and result tables, so it needs no interval. The same extract feeds the Power BI version of this report, and a test keeps the two in step.</p>
+    <p class="aside">Pick a season to re-total every panel. The trend charts keep all seasons and mark the one you picked.</p>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Season summary">
+  <figure class="pane" style="margin:0">
+    <div class="controls">
+      <div class="field">
+        <label for="s-season">Season</label>
+        <select id="s-season">
+          <option value="all">All seasons</option>
+          {% for s in season.seasons|reverse %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="s-type">Circuits</label>
+        <select id="s-type">
+          <option value="all">All circuits</option>
+          <option value="Street">Street circuits</option>
+          <option value="Permanent">Permanent circuits</option>
+        </select>
+      </div>
+    </div>
+    <dl class="readout six" aria-live="polite">
+      <div><dt>Grands Prix</dt><dd id="s-races">–</dd></div>
+      <div><dt>Laps</dt><dd id="s-laps">–</dd></div>
+      <div><dt>Drivers</dt><dd id="s-drivers">–</dd></div>
+      <div><dt>Stops per car</dt><dd id="s-stops">–</dd></div>
+      <div><dt>Passes per race</dt><dd id="s-passes">–</dd></div>
+      <div><dt>Laps under caution</dt><dd id="s-caution">–</dd></div>
+    </dl>
+  </figure>
+</section>
+
+<section class="run wide" aria-label="Season trends">
+  <div class="twin">
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Passes per race and stops per car</h3><span class="unit">by season</span></figcaption>
+      <div class="pane-body"><div id="s-trend" aria-hidden="true"></div></div>
+    </figure>
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Share of laps on each tyre</h3><span class="unit">compound ranked within its event</span></figcaption>
+      <div class="legend" aria-hidden="true">
+        <span><i class="dot" style="background:var(--soft)"></i>Softest</span>
+        <span><i class="dot" style="background:var(--middle)"></i>Middle</span>
+        <span><i class="dot" style="background:var(--hard);border:1px solid var(--hard-stroke)"></i>Hardest</span>
+        <span><i class="dot" style="background:var(--wet)"></i>Wet</span>
+      </div>
+      <div class="pane-body"><div id="s-tyres" aria-hidden="true"></div></div>
+    </figure>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Places gained from the grid">
+  <figure class="pane" style="margin:0">
+    <figcaption class="pane-head"><h3>Places gained from each grid slot</h3><span class="unit">classified finishers · average</span></figcaption>
+    <div class="pane-body"><div id="s-grid" aria-hidden="true"></div></div>
+    <div class="pane-foot"><p>Front-row starters can only lose places and back-row starters can only gain them, so the slope is partly arithmetic. The point is its size: how many places a race actually reshuffles.</p></div>
+  </figure>
+</section>
+
+<section class="run wide" aria-labelledby="h-s-table">
+  <div class="table-head">
+    <h2 id="h-s-table">Circuit scorecard</h2>
+    <p class="aside">For the season and circuit type picked above. Column headers sort.</p>
+  </div>
+  <div class="pane scroll-x">
+    <table class="est sortable" id="s-table">
+      <thead>
+        <tr>
+          <th data-k="circuit" aria-sort="none"><button type="button">Circuit</button></th>
+          <th data-k="type" aria-sort="none"><button type="button">Type</button></th>
+          <th class="n" data-k="races" aria-sort="none"><button type="button">Races</button></th>
+          <th class="n" data-k="ppr" aria-sort="descending"><button type="button">Passes / race</button></th>
+          <th class="n" data-k="spc" aria-sort="none"><button type="button">Stops / car</button></th>
+          <th class="n" data-k="caution" aria-sort="none"><button type="button">Caution laps</button></th>
+          <th class="n" data-k="finish" aria-sort="none"><button type="button">Finish rate</button></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block data %}{{ {"season": season}|tojson }}{% endblock %}

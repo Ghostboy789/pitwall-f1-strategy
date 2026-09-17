@@ -9,7 +9,7 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["DataFolder", "PitWallFile", "Key Measures", "Race", "Circuit", "Driver", "Tyre Compound", "Lap", "Result", "Stint", "Overtaking Opportunity", "Tyre Wear Estimate", "Validation Check", "Sanity Gate", "Strategy Backtest", "Quality Gate", "Overtaking Calibration", "Estimator Ordering", "Model Metrics"]
+annotation PBI_QueryOrder = ["DataFolder", "PitWallFile", "Key Measures", "Race", "Circuit", "Driver", "Tyre Compound", "Lap", "Result", "Stint", "Overtaking Opportunity", "Tyre Wear Estimate", "Validation Check", "Sanity Gate", "Strategy Backtest", "Quality Gate", "Overtaking Calibration", "Estimator Ordering", "Theme", "Model Metrics"]
 
 ref table 'Key Measures'
 ref table Race
@@ -27,4 +27,5 @@ ref table 'Strategy Backtest'
 ref table 'Quality Gate'
 ref table 'Overtaking Calibration'
 ref table 'Estimator Ordering'
+ref table Theme
 ref table 'Model Metrics'

@@ -4,10 +4,10 @@
   "position": {
     "x": 274,
     "y": 116,
-    "z": 800,
+    "z": 900,
     "height": 84,
     "width": 234,
-    "tabOrder": 800
+    "tabOrder": 900
   },
   "visual": {
     "visualType": "cardVisual",
@@ -57,17 +57,6 @@
                 }
               }
             },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#E4572E'"
-                    }
-                  }
-                }
-              }
-            },
             "width": {
               "expr": {
                 "Literal": {
@@ -79,6 +68,22 @@
               "expr": {
                 "Literal": {
                   "Value": "'Left'"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Key Measures"
+                        }
+                      },
+                      "Property": "Theme Accent"
+                    }
+                  }
                 }
               }
             }

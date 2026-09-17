@@ -4,7 +4,8 @@
 
 Reads the processed lap data and the fitted artefacts, and writes a small star
 schema to ``powerbi/data``: dimensions for race, circuit and driver; facts for
-laps, results, stints and overtaking opportunities; and the validation evidence.
+laps, results, stints and overtaking opportunities; the validation evidence; and
+the team colour themes, which are also written to ``models_out`` for the website.
 The report loads these files straight from GitHub, so a clone opens without the
 ~50 MB ingestion. Nothing here fits a model: every number is read from
 ``models_out`` or recounted from the lap table.
@@ -24,6 +25,7 @@ import pandas as pd
 
 from pitwall import config
 from pitwall.circuits import CIRCUIT_REF
+from pitwall.team_colours import team_themes
 
 log = logging.getLogger("pitwall.export_powerbi")
 
@@ -549,6 +551,7 @@ def main() -> int:
         "fact_result": results_table(results, classification, set(race["race_id"])),
         "fact_stint": stints_table(stints, rank),
         "degradation": degradation_table(),
+        "team_themes": team_themes(results),
         **validation_tables(),
     }
     big = {"fact_lap": laps_table(laps, pace), "fact_overtaking": opportunities_table(opps)}
@@ -559,6 +562,8 @@ def main() -> int:
     for name, df in big.items():
         df.to_parquet(OUT / f"{name}.parquet", index=False, compression="zstd")
         log.info("%-24s %7d rows", name, len(df))
+    # The website reads the same themes from the deployed artefacts.
+    tables["team_themes"].to_csv(config.MODELS_OUT / "team_themes.csv", index=False)
     return 0
 
 
