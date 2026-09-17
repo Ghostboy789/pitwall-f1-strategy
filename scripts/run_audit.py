@@ -56,7 +56,10 @@ def main(argv: list[str] | None = None) -> int:
         if missing:
             log.error("cannot merge, shards not finished: %s", ", ".join(missing))
             return 1
-        return _finish(pd.concat([pd.read_parquet(p) for p in shards], ignore_index=True))
+        status = _finish(pd.concat([pd.read_parquet(p) for p in shards], ignore_index=True))
+        for p in shards:
+            p.unlink()
+        return status
 
     art = pipeline.load_artifacts()
     laps = art["laps"]

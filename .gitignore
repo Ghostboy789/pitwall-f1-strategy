@@ -36,3 +36,7 @@ Thumbs.db
 .env
 *.key
 
+
+# Intermediate outputs of a sharded audit run; merged into audit.parquet.
+models_out/audit_shard*.parquet
+models_out/audit_partial*.parquet
