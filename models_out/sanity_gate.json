@@ -2,18 +2,18 @@
   "status": "ok",
   "passed": false,
   "failures": [
-    "mean gain 17.73s exceeds 2.0s",
-    "optimiser beats 88% of car-races, above the 70% threshold",
-    "largest single gain 99.7s exceeds 30.0s"
+    "mean gain 17.61s exceeds 2.0s",
+    "optimiser beats 86% of car-races, above the 70% threshold",
+    "largest single gain 98.9s exceeds 30.0s"
   ],
   "n_car_races": 706,
   "n_races": 40,
-  "mean_gain_s": 17.733381894986923,
-  "median_gain_s": 14.00548784052171,
-  "share_improved": 0.8781869688385269,
-  "max_gain_s": 99.73832310654598,
-  "p95_gain_s": 51.222318561437305,
-  "share_within_1s_of_optimal": 0.17563739376770537,
+  "mean_gain_s": 17.6127229504003,
+  "median_gain_s": 13.690469358573864,
+  "share_improved": 0.8611898016997167,
+  "max_gain_s": 98.87911470855943,
+  "p95_gain_s": 50.501281938222746,
+  "share_within_1s_of_optimal": 0.18555240793201133,
   "thresholds": {
     "max_mean_gain_s": 2.0,
     "max_share_improved": 0.7,

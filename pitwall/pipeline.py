@@ -30,11 +30,6 @@ DEFAULT_DEG_S_PER_LAP = 0.05
 DEFAULT_PIT_LOSS_S = 23.0
 DEFAULT_HAZARD = 0.02
 
-# Curvature of the degradation curve. Not identified from lap times; pinned on
-# a race-level moment by ``models.degcurve`` and written to this file. Absent,
-# the simulator is linear in tyre age exactly as it was before.
-DEG_CURVATURE_FILE = "deg_curvature.json"
-
 
 def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dict:
     """Run every stage in order and return the artefacts."""
@@ -177,11 +172,6 @@ def circuit_params(
     # faster with age would make the optimiser run one stint forever.
     deg_by_rank = {k: max(v, 0.0) for k, v in deg_by_rank.items()}
 
-    curvature = 0.0
-    curve_path = config.MODELS_OUT / DEG_CURVATURE_FILE
-    if curve_path.exists():
-        curvature = float(json.loads(curve_path.read_text()).get("curvature", 0.0))
-
     pit = a["pit_loss"]
     prow = pit[pit["circuit"] == circuit]
     pit_loss = float(prow["pit_loss_shrunk"].iloc[0]) if len(prow) else DEFAULT_PIT_LOSS_S
@@ -226,7 +216,6 @@ def circuit_params(
         caution_hazard_per_lap=hazard,
         traffic_s=traffic,
         deg_by_rank=deg_by_rank,
-        deg_quad_s_per_lap2=curvature,
         max_stint_by_rank=max_stint,
         pass_p_base=pass_base,
     )

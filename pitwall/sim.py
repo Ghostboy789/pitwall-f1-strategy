@@ -70,11 +70,6 @@ class CircuitParams:
     caution_hazard_per_lap: float
     traffic_s: float
     deg_by_rank: dict[int, float]
-    # Stint-length cost, in s per lap per (lap of tyre age)^2. Calibrated by
-    # ``models.degcurve`` so the simulator prices an extra pit stop the way
-    # real races did; lap-time data do not support it, so it is a calibrated
-    # cost term, not a measured tyre cliff. Zero is the original linear model.
-    deg_quad_s_per_lap2: float = 0.0
     # Longest stint ever plausibly run on each compound rank at this circuit,
     # taken from the 95th percentile of observed stints. The degradation model
     # is linear and, because the censoring correction is only partial, it
@@ -226,7 +221,6 @@ def simulate(
             + pace
             + fuel_gain
             + deg_rate * tyre_age
-            + params.deg_quad_s_per_lap2 * tyre_age.astype(float) ** 2
             + rng.normal(0.0, params.lap_time_sd_s, size=(n_sims, n_cars))
         )
         lap_time = np.where(under_sc[:, None], lap_time * params.sc_lap_multiplier, lap_time)

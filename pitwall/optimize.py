@@ -60,7 +60,6 @@ def deterministic_cost(
     deg_by_rank: dict[int, float],
     pit_loss_s: float,
     max_stint_by_rank: dict[int, int] | None = None,
-    deg_quad_s_per_lap2: float = 0.0,
 ) -> tuple[float, tuple[int, ...]]:
     """Tyre cost plus pit cost for one strategy. Lower is better.
 
@@ -87,12 +86,7 @@ def deterministic_cost(
             if cap and n > cap:
                 return np.inf, lengths
 
-    # sum over a=1..n of (slope*a + curvature*a^2), in closed form.
-    tyre = sum(
-        deg_by_rank.get(rank, 0.05) * n * (n + 1) / 2.0
-        + deg_quad_s_per_lap2 * n * (n + 1) * (2 * n + 1) / 6.0
-        for n, rank in zip(lengths, ranks)
-    )
+    tyre = sum(deg_by_rank.get(rank, 0.05) * n * (n + 1) / 2.0 for n, rank in zip(lengths, ranks))
     return tyre + len(stop_laps) * pit_loss_s, lengths
 
 
@@ -126,7 +120,6 @@ def enumerate_strategies(
                     params.deg_by_rank,
                     params.pit_loss_s,
                     params.max_stint_by_rank,
-                    params.deg_quad_s_per_lap2,
                 )
                 if not np.isfinite(cost):
                     continue
