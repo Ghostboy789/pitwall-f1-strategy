@@ -1,0 +1,59 @@
+/// The six checks of the pre-registered validation plan.
+table 'Validation Check'
+	lineageTag: 47154d4a-be19-5c39-95a7-9041b31a0759
+
+	column 'Check ID'
+		dataType: string
+		lineageTag: 37e73fca-1ea8-53c1-9dc4-e107b9b42128
+		summarizeBy: none
+		sourceColumn: check_id
+
+		annotation SummarizationSetBy = User
+
+	column Check
+		dataType: string
+		lineageTag: b9e8f57e-4ade-5a42-8664-1e1cb408c55b
+		summarizeBy: none
+		sourceColumn: check
+
+		annotation SummarizationSetBy = User
+
+	column Status
+		dataType: string
+		lineageTag: 110372b0-8614-501b-bdcd-96bbea3c6cd3
+		summarizeBy: none
+		sourceColumn: status
+		sortByColumn: 'Status Order'
+
+		annotation SummarizationSetBy = User
+
+	column Result
+		dataType: string
+		lineageTag: 64f13ba1-b277-5925-acf7-44dcd11e65de
+		summarizeBy: none
+		sourceColumn: result
+
+		annotation SummarizationSetBy = User
+
+	column 'Status Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 245bc77a-1088-5dcd-8514-f511b0729666
+		summarizeBy: none
+		sourceColumn: status_order
+
+		annotation SummarizationSetBy = User
+
+	partition 'Validation Check' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("validation_checks.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"check_id", type text}, {"check", type text}, {"status", type text}, {"result", type text}, {"status_order", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

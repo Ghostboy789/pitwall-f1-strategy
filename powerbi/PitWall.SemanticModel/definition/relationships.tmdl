@@ -1,0 +1,51 @@
+relationship 2778bc40-2947-58e0-804f-d227a9d84f01
+	fromColumn: Lap.'Race ID'
+	toColumn: Race.'Race ID'
+
+relationship ed333912-c5fb-589d-9ea9-d9b999f6ad2f
+	fromColumn: Lap.'Driver Code'
+	toColumn: Driver.'Driver Code'
+
+relationship 2b69c9d3-a032-5d2c-a6e9-9e57edea26eb
+	fromColumn: Lap.'Compound Rank'
+	toColumn: 'Tyre Compound'.'Compound Rank'
+
+relationship d0a270e1-02c2-5185-be62-1a21c54b58ae
+	fromColumn: Result.'Race ID'
+	toColumn: Race.'Race ID'
+
+relationship 0191f6db-02b1-5d78-bb35-bb78d56ef812
+	fromColumn: Result.'Driver Code'
+	toColumn: Driver.'Driver Code'
+
+relationship bf9fbfa3-fd37-5f8f-a76a-8c12d0ddb5c8
+	fromColumn: Stint.'Race ID'
+	toColumn: Race.'Race ID'
+
+relationship 32dbb1d1-7473-5a85-8b51-10730882919c
+	fromColumn: Stint.'Driver Code'
+	toColumn: Driver.'Driver Code'
+
+relationship ba5bbc8a-5dd6-566d-b19c-15696e369c89
+	fromColumn: Stint.'Compound Rank'
+	toColumn: 'Tyre Compound'.'Compound Rank'
+
+relationship 6416fe17-c821-57b2-a948-69da31f6455d
+	fromColumn: 'Overtaking Opportunity'.'Race ID'
+	toColumn: Race.'Race ID'
+
+relationship 63665ebb-7313-5a0a-9345-6c11e0494720
+	fromColumn: 'Overtaking Opportunity'.'Driver Code'
+	toColumn: Driver.'Driver Code'
+
+relationship efc032be-4376-5b79-bbbc-15b5a754f597
+	fromColumn: Race.'Circuit Key'
+	toColumn: Circuit.'Circuit Key'
+
+relationship 69df2507-2528-50c4-b863-cb9f929a545b
+	fromColumn: 'Tyre Wear Estimate'.'Circuit Key'
+	toColumn: Circuit.'Circuit Key'
+
+relationship 2d443c6f-32a8-5875-9969-6ea66c9b6118
+	fromColumn: 'Tyre Wear Estimate'.'Compound Rank'
+	toColumn: 'Tyre Compound'.'Compound Rank'

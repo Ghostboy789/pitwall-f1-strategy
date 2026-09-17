@@ -1,6 +1,6 @@
 # Data & caches - never commit. `data/raw` is ~26 MB of ingested parquet and
 # `data/processed` ~25 MB of derived tables; both rebuild from the pipeline.
-data/
+/data/
 cache/
 fastf1_cache/
 *.feather
@@ -40,3 +40,7 @@ Thumbs.db
 # Intermediate outputs of a sharded audit run; merged into audit.parquet.
 models_out/audit_shard*.parquet
 models_out/audit_partial*.parquet
+
+# Power BI Desktop per-user state and local data cache.
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

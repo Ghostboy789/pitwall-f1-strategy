@@ -1,0 +1,129 @@
+/// Dimension: one row per Grand Prix.
+table Race
+	lineageTag: b060d06b-dc7b-5b00-8a1d-71b6bd157723
+
+	column 'Race ID'
+		dataType: string
+		isHidden
+		lineageTag: 687b5e9c-22cf-562a-84de-6b0e8bc6cef7
+		summarizeBy: none
+		sourceColumn: race_id
+
+		annotation SummarizationSetBy = User
+
+	column Season
+		dataType: int64
+		formatString: 0
+		lineageTag: 82703b30-ff81-5ced-9850-b951327a606a
+		summarizeBy: none
+		sourceColumn: season
+
+		annotation SummarizationSetBy = User
+
+	column Round
+		dataType: int64
+		formatString: 0
+		lineageTag: 5014aab4-9767-5ec5-922d-67f29d70c3d4
+		summarizeBy: none
+		sourceColumn: round
+
+		annotation SummarizationSetBy = User
+
+	column 'Grand Prix'
+		dataType: string
+		lineageTag: d2f4ae94-4312-5b16-8219-002fd87031cc
+		summarizeBy: none
+		sourceColumn: event_name
+
+		annotation SummarizationSetBy = User
+
+	column 'Circuit Key'
+		dataType: string
+		isHidden
+		lineageTag: 57813274-3763-5cb7-aa96-efa054e19546
+		summarizeBy: none
+		sourceColumn: circuit_key
+
+		annotation SummarizationSetBy = User
+
+	column 'Race Date'
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: cbb27ccb-d202-54b4-af4f-2b948c569129
+		summarizeBy: none
+		sourceColumn: event_date
+
+		annotation SummarizationSetBy = User
+
+	column 'Scheduled Laps'
+		dataType: int64
+		formatString: 0
+		lineageTag: 054f2255-5507-5530-a689-3e19c2d777fb
+		summarizeBy: none
+		sourceColumn: race_laps
+
+		annotation SummarizationSetBy = User
+
+	column Cars
+		dataType: int64
+		formatString: 0
+		lineageTag: ac39a054-8c0f-5208-9b08-8b6071fbad78
+		summarizeBy: none
+		sourceColumn: cars
+
+		annotation SummarizationSetBy = User
+
+	column 'Laps Recorded'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 081f7208-8387-5dda-a2ad-be8685c598be
+		summarizeBy: none
+		sourceColumn: laps_recorded
+
+		annotation SummarizationSetBy = User
+
+	column 'Green Flag Share'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: f6dc4ef8-c875-5e67-bda0-7edca9f202b6
+		summarizeBy: none
+		sourceColumn: green_lap_share
+
+		annotation SummarizationSetBy = User
+
+	column 'Exclusion Reason'
+		dataType: string
+		lineageTag: f9c0807a-027c-5b98-ae81-e5cfb4f68a19
+		summarizeBy: none
+		sourceColumn: exclusion_reason
+
+		annotation SummarizationSetBy = User
+
+	column 'Used In Strategy Models'
+		dataType: boolean
+		lineageTag: a1c220e5-9c83-5675-9a6c-7e63035aeda6
+		summarizeBy: none
+		sourceColumn: used_in_strategy_models
+
+		annotation SummarizationSetBy = User
+
+	column Race
+		dataType: string
+		lineageTag: 8cb3e25e-6b41-5231-8466-6734304e61f5
+		summarizeBy: none
+		sourceColumn: race_label
+
+		annotation SummarizationSetBy = User
+
+	partition Race = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("dim_race.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"race_id", type text}, {"season", Int64.Type}, {"round", Int64.Type}, {"event_name", type text}, {"circuit_key", type text}, {"event_date", type date}, {"race_laps", Int64.Type}, {"cars", Int64.Type}, {"laps_recorded", Int64.Type}, {"green_lap_share", type number}, {"exclusion_reason", type text}, {"used_in_strategy_models", type logical}, {"race_label", type text}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,143 @@
+/// Fact: one row per car per lap, 203,644 laps from FastF1 timing data.
+table Lap
+	lineageTag: 145d0ae6-3583-5144-8f67-e6a15f505c06
+
+	column 'Race ID'
+		dataType: string
+		isHidden
+		lineageTag: b1932680-4c0b-5945-8078-1c778680875e
+		summarizeBy: none
+		sourceColumn: race_id
+
+		annotation SummarizationSetBy = User
+
+	column 'Driver Code'
+		dataType: string
+		isHidden
+		lineageTag: 3b56079d-70fe-5d93-a99d-5a23abc9954c
+		summarizeBy: none
+		sourceColumn: driver_code
+
+		annotation SummarizationSetBy = User
+
+	column Team
+		dataType: string
+		lineageTag: d9b35aee-af8d-57ef-b5af-0fafada541ad
+		summarizeBy: none
+		sourceColumn: team
+
+		annotation SummarizationSetBy = User
+
+	column Lap
+		dataType: int64
+		formatString: 0
+		lineageTag: 3f1ab6d3-14fe-5c5c-aecf-1c661e792a0a
+		summarizeBy: none
+		sourceColumn: lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Lap Time (s)'
+		dataType: double
+		formatString: 0.000
+		lineageTag: 8ac8d54b-5868-592d-9edb-fb36df76e09b
+		summarizeBy: none
+		sourceColumn: lap_time_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Compound Label'
+		dataType: string
+		lineageTag: 4c551fd3-d95b-55ed-9119-b60666ebb5a8
+		summarizeBy: none
+		sourceColumn: compound
+
+		annotation SummarizationSetBy = User
+
+	column 'Compound Rank'
+		dataType: string
+		isHidden
+		lineageTag: 55a78411-095c-5612-b14a-a25436bec207
+		summarizeBy: none
+		sourceColumn: compound_rank
+
+		annotation SummarizationSetBy = User
+
+	column 'Tyre Age (laps)'
+		dataType: double
+		formatString: 0
+		lineageTag: 4d17f094-d6a0-5c83-b3b1-d2da8c31294b
+		summarizeBy: none
+		sourceColumn: tyre_age_laps
+
+		annotation SummarizationSetBy = User
+
+	column Stint
+		dataType: double
+		formatString: 0
+		lineageTag: ae877cf4-1111-5414-91eb-71943a392784
+		summarizeBy: none
+		sourceColumn: stint
+
+		annotation SummarizationSetBy = User
+
+	column Position
+		dataType: double
+		formatString: 0
+		lineageTag: f2aaf478-f3d1-59c7-8ca5-b427af29530d
+		summarizeBy: none
+		sourceColumn: position
+
+		annotation SummarizationSetBy = User
+
+	column 'Green Flag'
+		dataType: boolean
+		lineageTag: 6a91f0ac-6e25-5552-8a2b-535fd7f07da7
+		summarizeBy: none
+		sourceColumn: green_flag
+
+		annotation SummarizationSetBy = User
+
+	column 'Pit In Lap'
+		dataType: boolean
+		lineageTag: ace00b08-22cd-5ebb-9891-3f7da6b030f5
+		summarizeBy: none
+		sourceColumn: pit_in_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Pit Out Lap'
+		dataType: boolean
+		lineageTag: 41fbf940-0c4c-535c-a9a7-5ec867ad311f
+		summarizeBy: none
+		sourceColumn: pit_out_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Pace Lap'
+		dataType: boolean
+		lineageTag: cc542f15-49f5-5b94-b8ab-76f472fa767c
+		summarizeBy: none
+		sourceColumn: pace_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Delta to Race Median (s)'
+		dataType: double
+		formatString: 0.000
+		lineageTag: e43bea46-8e52-5145-a3ff-5af76290599b
+		summarizeBy: none
+		sourceColumn: delta_to_race_median_s
+
+		annotation SummarizationSetBy = User
+
+	partition Lap = m
+		mode: import
+		source =
+				let
+				    Source = Parquet.Document(Binary.Buffer(PitWallFile("fact_lap.parquet"))),
+				    Typed = Table.TransformColumnTypes(Source, {{"race_id", type text}, {"driver_code", type text}, {"team", type text}, {"lap", Int64.Type}, {"lap_time_s", type number}, {"compound", type text}, {"compound_rank", type text}, {"tyre_age_laps", type number}, {"stint", type number}, {"position", type number}, {"green_flag", type logical}, {"pit_in_lap", type logical}, {"pit_out_lap", type logical}, {"pace_lap", type logical}, {"delta_to_race_median_s", type number}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

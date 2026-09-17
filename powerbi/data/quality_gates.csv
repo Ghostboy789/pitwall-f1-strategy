@@ -1,0 +1,9 @@
+check,n_checked,n_violations,allowed,passed
+Lap table has rows,1,0,0,True
+Lap numbers rise per car,203644,0,0,True
+Stints never go backwards,203644,0,0,True
+Tyre age +1 per lap in a stint,192153,0,0,True
+New tyres start at age 1,7666,26,77,True
+Lap time within 50–400 s,197422,0,0,True
+Every circuit is a known layout,32,0,0,True
+One row per car per lap,203644,0,0,True

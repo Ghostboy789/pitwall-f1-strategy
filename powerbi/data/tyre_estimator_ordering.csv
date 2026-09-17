@@ -1,0 +1,4 @@
+estimator,estimator_order,circuits_soft_wears_fastest,circuits,impossible_cells,cells
+Naive,1,11,29,11,89
+Fixed effects,2,15,29,2,89
+IPCW-corrected,3,21,29,1,89

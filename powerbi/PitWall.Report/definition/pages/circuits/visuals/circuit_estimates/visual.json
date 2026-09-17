@@ -1,0 +1,282 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "name": "circuit_estimates",
+  "position": {
+    "x": 648,
+    "y": 458,
+    "z": 1400,
+    "height": 222,
+    "width": 608,
+    "tabOrder": 1400
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Circuit"
+                    }
+                  },
+                  "Property": "Circuit"
+                }
+              },
+              "queryRef": "Circuit.Circuit",
+              "nativeQueryRef": "Circuit",
+              "displayName": "Circuit"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Races"
+                }
+              },
+              "queryRef": "Key Measures.Races",
+              "nativeQueryRef": "Races",
+              "displayName": "Races"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Pass Chance per Lap"
+                }
+              },
+              "queryRef": "Key Measures.Pass Chance per Lap",
+              "nativeQueryRef": "Pass Chance per Lap",
+              "displayName": "Pass chance"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Cost of Being Stuck (s)"
+                }
+              },
+              "queryRef": "Key Measures.Cost of Being Stuck (s)",
+              "nativeQueryRef": "Cost of Being Stuck (s)",
+              "displayName": "Seconds lost"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "95% Interval"
+                }
+              },
+              "queryRef": "Key Measures.95% Interval",
+              "nativeQueryRef": "95% Interval",
+              "displayName": "95% interval"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Pit Loss (s)"
+                }
+              },
+              "queryRef": "Key Measures.Pit Loss (s)",
+              "nativeQueryRef": "Pit Loss (s)",
+              "displayName": "Pit loss, s"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Key Measures"
+                  }
+                },
+                "Property": "Cost of Being Stuck (s)"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Estimates with 95% intervals (race-clustered bootstrap)'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Semibold'', wf_segoe-ui_semibold, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11.0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Per-circuit estimates with intervals'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "149.9D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Circuit.Circuit"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "56.2D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Races"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "87.4D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Pass Chance per Lap"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "87.4D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Cost of Being Stuck (s)"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "99.9D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.95% Interval"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "81.2D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Pit Loss (s)"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

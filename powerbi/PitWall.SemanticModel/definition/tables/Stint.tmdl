@@ -1,0 +1,144 @@
+/// Fact: one row per tyre stint.
+table Stint
+	lineageTag: 2d7cfbc6-c67d-50c4-b381-645ae941907a
+
+	column 'Stint ID'
+		dataType: string
+		isHidden
+		lineageTag: 2f5aee2c-6b97-5192-81a2-1fd6369f6ee6
+		summarizeBy: none
+		sourceColumn: stint_id
+
+		annotation SummarizationSetBy = User
+
+	column 'Race ID'
+		dataType: string
+		isHidden
+		lineageTag: a8eac1dc-19f9-52db-9363-9a564bf41746
+		summarizeBy: none
+		sourceColumn: race_id
+
+		annotation SummarizationSetBy = User
+
+	column 'Driver Code'
+		dataType: string
+		isHidden
+		lineageTag: bbf857fc-4dad-5122-90bd-4606d6915c73
+		summarizeBy: none
+		sourceColumn: driver_code
+
+		annotation SummarizationSetBy = User
+
+	column Team
+		dataType: string
+		lineageTag: 55eb000c-4481-5a29-b19b-5312552b2ca7
+		summarizeBy: none
+		sourceColumn: team
+
+		annotation SummarizationSetBy = User
+
+	column Stint
+		dataType: int64
+		formatString: 0
+		lineageTag: e8ee4820-db16-5b8b-b855-8c1b2bc0178d
+		summarizeBy: none
+		sourceColumn: stint
+
+		annotation SummarizationSetBy = User
+
+	column 'Compound Label'
+		dataType: string
+		lineageTag: 34454213-b259-57c1-bddc-351cfe4ee03f
+		summarizeBy: none
+		sourceColumn: compound
+
+		annotation SummarizationSetBy = User
+
+	column 'Compound Rank'
+		dataType: string
+		isHidden
+		lineageTag: c4a2e9ac-d45a-5fe9-9418-459a09486ba9
+		summarizeBy: none
+		sourceColumn: compound_rank
+
+		annotation SummarizationSetBy = User
+
+	column 'Fresh Tyre'
+		dataType: boolean
+		lineageTag: 5c047ef8-724e-5d42-b278-217f741856b0
+		summarizeBy: none
+		sourceColumn: fresh_tyre
+
+		annotation SummarizationSetBy = User
+
+	column 'Start Lap'
+		dataType: double
+		formatString: 0
+		lineageTag: 2f83ce54-a7cf-5ba5-80a3-6d704a255ee3
+		summarizeBy: none
+		sourceColumn: start_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'End Lap'
+		dataType: double
+		formatString: 0
+		lineageTag: bd8d7383-5b3d-5b80-b3e2-c1fd319f48ef
+		summarizeBy: none
+		sourceColumn: end_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Stint Length (laps)'
+		dataType: double
+		formatString: 0
+		lineageTag: ca4be891-8cb3-54e8-ba45-cfb4335e1542
+		summarizeBy: none
+		sourceColumn: stint_laps
+
+		annotation SummarizationSetBy = User
+
+	column 'Ended In Pit'
+		dataType: boolean
+		lineageTag: 1e3a4ea4-ac7e-50e7-bffa-01e845fef61f
+		summarizeBy: none
+		sourceColumn: ended_in_pit
+
+		annotation SummarizationSetBy = User
+
+	column 'Ran To Flag'
+		dataType: boolean
+		lineageTag: 59c54162-f2dc-5588-8aae-964b926f8afb
+		summarizeBy: none
+		sourceColumn: ran_to_flag
+
+		annotation SummarizationSetBy = User
+
+	column 'Tyre Life Observed'
+		dataType: boolean
+		lineageTag: 4fbdbdd5-def2-5d57-a454-9d94c3097085
+		summarizeBy: none
+		sourceColumn: tyre_life_observed
+
+		annotation SummarizationSetBy = User
+
+	column 'Caution During Stint'
+		dataType: boolean
+		lineageTag: 69d614c0-feac-5953-b4f7-78425283f2fa
+		summarizeBy: none
+		sourceColumn: caution_during_stint
+
+		annotation SummarizationSetBy = User
+
+	partition Stint = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("fact_stint.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"stint_id", type text}, {"race_id", type text}, {"driver_code", type text}, {"team", type text}, {"stint", Int64.Type}, {"compound", type text}, {"compound_rank", type text}, {"fresh_tyre", type logical}, {"start_lap", type number}, {"end_lap", type number}, {"stint_laps", type number}, {"ended_in_pit", type logical}, {"ran_to_flag", type logical}, {"tyre_life_observed", type logical}, {"caution_during_stint", type logical}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

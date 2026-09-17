@@ -1,0 +1,2 @@
+n_races,n_races_used_for_strategy,n_laps_raw,n_laps_modelled,n_circuits,n_drivers,n_teams,n_stints,share_stints_censored,n_opportunities,n_passes,overtaking_auc,overtaking_brier,overtaking_ece,gates_passed,gates_total
+185,162,203644,149432,32,44,21,10421,0.3617695038863833,64646,4977,0.9146205871339248,0.048715228333275476,0.002488619216906983,8,8

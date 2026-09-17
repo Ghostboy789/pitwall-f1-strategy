@@ -1,0 +1,186 @@
+race_id,season,round,event_name,circuit_key,event_date,race_laps,cars,laps_recorded,green_lap_share,exclusion_reason,used_in_strategy_models,race_label
+2018_01,2018,1,Australian Grand Prix,albert_park,2018-03-25,58,20,940,0.6894,,True,2018 Australian Grand Prix
+2018_02,2018,2,Bahrain Grand Prix,bahrain,2018-04-08,57,20,998,0.8136,,True,2018 Bahrain Grand Prix
+2018_03,2018,3,Chinese Grand Prix,shanghai,2018-04-15,56,20,1115,0.3561,,True,2018 Chinese Grand Prix
+2018_04,2018,4,Azerbaijan Grand Prix,baku,2018-04-29,51,20,848,0.6061,,True,2018 Azerbaijan Grand Prix
+2018_05,2018,5,Spanish Grand Prix,catalunya,2018-05-13,66,20,1021,0.8472,,True,2018 Spanish Grand Prix
+2018_06,2018,6,Monaco Grand Prix,monaco,2018-05-27,78,20,1516,0.9044,,True,2018 Monaco Grand Prix
+2018_07,2018,7,Canadian Grand Prix,villeneuve,2018-06-10,70,20,1219,0.9393,,True,2018 Canadian Grand Prix
+2018_08,2018,8,French Grand Prix,paul_ricard,2018-06-24,53,20,920,0.8141,,True,2018 French Grand Prix
+2018_09,2018,9,Austrian Grand Prix,red_bull_ring,2018-07-01,71,20,1244,0.8135,,True,2018 Austrian Grand Prix
+2018_10,2018,10,British Grand Prix,silverstone,2018-07-08,52,20,902,0.6552,,True,2018 British Grand Prix
+2018_11,2018,11,German Grand Prix,hockenheim,2018-07-22,67,20,1252,0.3946,,True,2018 German Grand Prix
+2018_12,2018,12,Hungarian Grand Prix,hungaroring,2018-07-29,70,20,1233,0.8646,,True,2018 Hungarian Grand Prix
+2018_13,2018,13,Belgian Grand Prix,spa,2018-08-26,44,20,693,0.8817,,True,2018 Belgian Grand Prix
+2018_15,2018,15,Singapore Grand Prix,singapore,2018-09-16,61,20,1146,0.9328,,True,2018 Singapore Grand Prix
+2018_16,2018,16,Russian Grand Prix,sochi,2018-09-30,53,20,948,0.9578,,True,2018 Russian Grand Prix
+2018_17,2018,17,Japanese Grand Prix,suzuka,2018-10-07,53,20,977,0.8485,,True,2018 Japanese Grand Prix
+2018_18,2018,18,United States Grand Prix,cota,2018-10-21,56,20,932,0.8938,,True,2018 United States Grand Prix
+2018_19,2018,19,Mexican Grand Prix,rodriguez,2018-10-28,71,20,1245,0.8924,,True,2018 Mexican Grand Prix
+2018_20,2018,20,Brazilian Grand Prix,interlagos,2018-11-11,71,20,1318,0.9659,,True,2018 Brazilian Grand Prix
+2018_21,2018,21,Abu Dhabi Grand Prix,yas_marina,2018-11-25,55,20,943,0.8462,,True,2018 Abu Dhabi Grand Prix
+2019_01,2019,1,Australian Grand Prix,albert_park,2019-03-17,58,20,1041,0.9625,,True,2019 Australian Grand Prix
+2019_02,2019,2,Bahrain Grand Prix,bahrain,2019-03-31,57,20,1083,0.7812,,True,2019 Bahrain Grand Prix
+2019_03,2019,3,Chinese Grand Prix,shanghai,2019-04-14,56,20,1046,0.9618,,True,2019 Chinese Grand Prix
+2019_04,2019,4,Azerbaijan Grand Prix,baku,2019-04-28,51,20,948,0.9061,,True,2019 Azerbaijan Grand Prix
+2019_05,2019,5,Spanish Grand Prix,catalunya,2019-05-12,66,20,1276,0.8691,,True,2019 Spanish Grand Prix
+2019_06,2019,6,Monaco Grand Prix,monaco,2019-05-26,78,20,1490,0.8376,,True,2019 Monaco Grand Prix
+2019_07,2019,7,Canadian Grand Prix,villeneuve,2019-06-09,70,20,1312,0.8742,,True,2019 Canadian Grand Prix
+2019_08,2019,8,French Grand Prix,paul_ricard,2019-06-23,53,20,1037,0.9132,,True,2019 French Grand Prix
+2019_09,2019,9,Austrian Grand Prix,red_bull_ring,2019-06-30,71,20,1401,1.0,,True,2019 Austrian Grand Prix
+2019_10,2019,10,British Grand Prix,silverstone,2019-07-14,52,20,914,0.8578,,True,2019 British Grand Prix
+2019_11,2019,11,German Grand Prix,hockenheim,2019-07-28,64,20,1059,0.6251,Wet race,False,2019 German Grand Prix
+2019_12,2019,12,Hungarian Grand Prix,hungaroring,2019-08-04,70,20,1358,0.9853,,True,2019 Hungarian Grand Prix
+2019_13,2019,13,Belgian Grand Prix,spa,2019-09-01,44,20,787,0.8742,,True,2019 Belgian Grand Prix
+2019_14,2019,14,Italian Grand Prix,monza,2019-09-08,53,20,991,0.8678,,True,2019 Italian Grand Prix
+2019_15,2019,15,Singapore Grand Prix,singapore,2019-09-22,61,20,1165,0.8,,True,2019 Singapore Grand Prix
+2019_16,2019,16,Russian Grand Prix,sochi,2019-09-29,53,20,901,0.8335,,True,2019 Russian Grand Prix
+2019_17,2019,17,Japanese Grand Prix,suzuka,2019-10-13,53,20,1005,0.9542,,True,2019 Japanese Grand Prix
+2019_18,2019,18,Mexican Grand Prix,rodriguez,2019-10-27,71,20,1370,0.9321,,True,2019 Mexican Grand Prix
+2019_19,2019,19,United States Grand Prix,cota,2019-11-03,56,20,1032,0.9225,,True,2019 United States Grand Prix
+2019_20,2019,20,Brazilian Grand Prix,interlagos,2019-11-17,71,20,1385,0.8087,,True,2019 Brazilian Grand Prix
+2019_21,2019,21,Abu Dhabi Grand Prix,yas_marina,2019-12-01,55,20,1075,0.9814,,True,2019 Abu Dhabi Grand Prix
+2020_01,2020,1,Austrian Grand Prix,red_bull_ring,2020-07-05,68,20,1061,0.7059,,True,2020 Austrian Grand Prix
+2020_02,2020,2,Styrian Grand Prix,red_bull_ring,2020-07-12,71,20,1226,0.9372,,True,2020 Styrian Grand Prix
+2020_03,2020,3,Hungarian Grand Prix,hungaroring,2020-07-19,70,20,1327,0.9593,,True,2020 Hungarian Grand Prix
+2020_04,2020,4,British Grand Prix,silverstone,2020-08-02,52,19,897,0.7603,,True,2020 British Grand Prix
+2020_05,2020,5,70th Anniversary Grand Prix,silverstone,2020-08-09,52,20,1025,0.959,,True,2020 70th Anniversary Grand Prix
+2020_06,2020,6,Spanish Grand Prix,catalunya,2020-08-16,66,20,1274,0.9725,,True,2020 Spanish Grand Prix
+2020_07,2020,7,Belgian Grand Prix,spa,2020-08-30,44,19,768,0.8724,,True,2020 Belgian Grand Prix
+2020_08,2020,8,Italian Grand Prix,monza,2020-09-06,53,20,926,0.824,,True,2020 Italian Grand Prix
+2020_09,2020,9,Tuscan Grand Prix,mugello,2020-09-13,59,20,786,0.7697,Red flag in the first quarter,False,2020 Tuscan Grand Prix
+2020_10,2020,10,Russian Grand Prix,sochi,2020-09-27,53,20,948,0.8787,,True,2020 Russian Grand Prix
+2020_11,2020,11,Eifel Grand Prix,nurburgring,2020-10-11,60,20,1019,0.7792,,True,2020 Eifel Grand Prix
+2020_12,2020,12,Portuguese Grand Prix,portimao,2020-10-25,66,20,1288,0.9845,,True,2020 Portuguese Grand Prix
+2020_13,2020,13,Emilia Romagna Grand Prix,imola,2020-11-01,63,20,1131,0.8179,,True,2020 Emilia Romagna Grand Prix
+2020_14,2020,14,Turkish Grand Prix,istanbul,2020-11-15,58,20,1077,0.7484,Wet race,False,2020 Turkish Grand Prix
+2020_15,2020,15,Bahrain Grand Prix,bahrain,2020-11-29,57,20,1019,0.787,Red flag in the first quarter,False,2020 Bahrain Grand Prix
+2020_16,2020,16,Sakhir Grand Prix,bahrain_outer,2020-12-06,87,20,1534,0.8025,,True,2020 Sakhir Grand Prix
+2020_17,2020,17,Abu Dhabi Grand Prix,yas_marina,2020-12-13,55,20,1044,0.9148,,True,2020 Abu Dhabi Grand Prix
+2021_01,2021,1,Bahrain Grand Prix,bahrain,2021-03-28,56,20,1027,0.887,,True,2021 Bahrain Grand Prix
+2021_02,2021,2,Emilia Romagna Grand Prix,imola,2021-04-18,63,20,1127,0.7551,Wet race,False,2021 Emilia Romagna Grand Prix
+2021_03,2021,3,Portuguese Grand Prix,portimao,2021-05-02,66,20,1245,0.9229,,True,2021 Portuguese Grand Prix
+2021_04,2021,4,Spanish Grand Prix,catalunya,2021-05-09,66,20,1247,0.9447,,True,2021 Spanish Grand Prix
+2021_05,2021,5,Monaco Grand Prix,monaco,2021-05-23,78,19,1419,1.0,,True,2021 Monaco Grand Prix
+2021_06,2021,6,Azerbaijan Grand Prix,baku,2021-06-06,51,20,943,0.7328,,True,2021 Azerbaijan Grand Prix
+2021_07,2021,7,French Grand Prix,paul_ricard,2021-06-20,53,20,1051,1.0,,True,2021 French Grand Prix
+2021_08,2021,8,Styrian Grand Prix,red_bull_ring,2021-06-27,71,20,1296,0.9846,,True,2021 Styrian Grand Prix
+2021_09,2021,9,Austrian Grand Prix,red_bull_ring,2021-07-04,71,20,1338,0.941,,True,2021 Austrian Grand Prix
+2021_10,2021,10,British Grand Prix,silverstone,2021-07-18,52,20,970,0.9175,Red flag in the first quarter,False,2021 British Grand Prix
+2021_11,2021,11,Hungarian Grand Prix,hungaroring,2021-08-01,70,20,985,0.9482,Red flag in the first quarter,False,2021 Hungarian Grand Prix
+2021_12,2021,12,Belgian Grand Prix,spa,2021-08-29,3,20,60,0.6667,Too few green-flag laps,False,2021 Belgian Grand Prix
+2021_13,2021,13,Dutch Grand Prix,zandvoort,2021-09-05,72,20,1361,0.9853,,True,2021 Dutch Grand Prix
+2021_14,2021,14,Italian Grand Prix,monza,2021-09-12,53,19,891,0.7991,,True,2021 Italian Grand Prix
+2021_15,2021,15,Russian Grand Prix,sochi,2021-09-26,53,20,1025,0.9122,,True,2021 Russian Grand Prix
+2021_16,2021,16,Turkish Grand Prix,istanbul,2021-10-10,58,20,1147,0.925,Wet race,False,2021 Turkish Grand Prix
+2021_17,2021,17,United States Grand Prix,cota,2021-10-24,56,20,1044,0.9416,,True,2021 United States Grand Prix
+2021_18,2021,18,Mexico City Grand Prix,rodriguez,2021-11-07,71,20,1261,0.9413,,True,2021 Mexico City Grand Prix
+2021_19,2021,19,São Paulo Grand Prix,interlagos,2021-11-14,71,20,1360,0.875,,True,2021 São Paulo Grand Prix
+2021_20,2021,20,Qatar Grand Prix,lusail,2021-11-21,57,20,1114,0.8932,,True,2021 Qatar Grand Prix
+2021_21,2021,21,Saudi Arabian Grand Prix,jeddah,2021-12-05,50,20,845,0.6911,,True,2021 Saudi Arabian Grand Prix
+2021_22,2021,22,Abu Dhabi Grand Prix,yas_marina,2021-12-12,58,19,1000,0.838,,True,2021 Abu Dhabi Grand Prix
+2022_01,2022,1,Bahrain Grand Prix,bahrain,2022-03-20,57,20,1125,0.8516,,True,2022 Bahrain Grand Prix
+2022_02,2022,2,Saudi Arabian Grand Prix,jeddah,2022-03-27,50,18,820,0.7671,,True,2022 Saudi Arabian Grand Prix
+2022_03,2022,3,Australian Grand Prix,albert_park,2022-04-10,58,20,1045,0.8048,,True,2022 Australian Grand Prix
+2022_04,2022,4,Emilia Romagna Grand Prix,imola,2022-04-24,63,20,1132,0.8931,,True,2022 Emilia Romagna Grand Prix
+2022_05,2022,5,Miami Grand Prix,miami,2022-05-08,57,20,1057,0.8108,,True,2022 Miami Grand Prix
+2022_06,2022,6,Spanish Grand Prix,catalunya,2022-05-22,66,20,1230,0.948,,True,2022 Spanish Grand Prix
+2022_07,2022,7,Monaco Grand Prix,monaco,2022-05-29,64,20,1179,0.7718,Wet race,False,2022 Monaco Grand Prix
+2022_08,2022,8,Azerbaijan Grand Prix,baku,2022-06-12,51,20,891,0.8732,,True,2022 Azerbaijan Grand Prix
+2022_09,2022,9,Canadian Grand Prix,villeneuve,2022-06-19,70,20,1264,0.8307,,True,2022 Canadian Grand Prix
+2022_10,2022,10,British Grand Prix,silverstone,2022-07-03,52,20,815,0.8724,Red flag in the first quarter,False,2022 British Grand Prix
+2022_11,2022,11,Austrian Grand Prix,red_bull_ring,2022-07-10,71,20,1324,0.935,,True,2022 Austrian Grand Prix
+2022_12,2022,12,French Grand Prix,paul_ricard,2022-07-24,53,20,958,0.8413,,True,2022 French Grand Prix
+2022_13,2022,13,Hungarian Grand Prix,hungaroring,2022-07-31,70,20,1383,0.8713,,True,2022 Hungarian Grand Prix
+2022_14,2022,14,Belgian Grand Prix,spa,2022-08-28,44,20,792,0.8851,,True,2022 Belgian Grand Prix
+2022_15,2022,15,Dutch Grand Prix,zandvoort,2022-09-04,72,20,1392,0.8139,,True,2022 Dutch Grand Prix
+2022_16,2022,16,Italian Grand Prix,monza,2022-09-11,53,20,971,0.8342,,True,2022 Italian Grand Prix
+2022_17,2022,17,Singapore Grand Prix,singapore,2022-10-02,59,20,945,0.6772,Wet race,False,2022 Singapore Grand Prix
+2022_18,2022,18,Japanese Grand Prix,suzuka,2022-10-09,29,20,507,0.925,Red flag in the first quarter + Wet race,False,2022 Japanese Grand Prix
+2022_19,2022,19,United States Grand Prix,cota,2022-10-23,56,20,992,0.8286,,True,2022 United States Grand Prix
+2022_20,2022,20,Mexico City Grand Prix,rodriguez,2022-10-30,71,20,1379,0.9753,,True,2022 Mexico City Grand Prix
+2022_21,2022,21,São Paulo Grand Prix,interlagos,2022-11-13,71,20,1259,0.7808,,True,2022 São Paulo Grand Prix
+2022_22,2022,22,Abu Dhabi Grand Prix,yas_marina,2022-11-20,58,20,1117,0.9821,,True,2022 Abu Dhabi Grand Prix
+2023_01,2023,1,Bahrain Grand Prix,bahrain,2023-03-05,57,20,1056,0.9271,,True,2023 Bahrain Grand Prix
+2023_02,2023,2,Saudi Arabian Grand Prix,jeddah,2023-03-19,50,20,943,0.9183,,True,2023 Saudi Arabian Grand Prix
+2023_03,2023,3,Australian Grand Prix,albert_park,2023-04-02,58,20,1003,0.8036,Red flag in the first quarter,False,2023 Australian Grand Prix
+2023_04,2023,4,Azerbaijan Grand Prix,baku,2023-04-30,51,20,962,0.8607,,True,2023 Azerbaijan Grand Prix
+2023_05,2023,5,Miami Grand Prix,miami,2023-05-07,57,20,1138,1.0,,True,2023 Miami Grand Prix
+2023_06,2023,6,Monaco Grand Prix,monaco,2023-05-28,78,20,1515,0.8587,,True,2023 Monaco Grand Prix
+2023_07,2023,7,Spanish Grand Prix,catalunya,2023-06-04,66,20,1312,1.0,,True,2023 Spanish Grand Prix
+2023_08,2023,8,Canadian Grand Prix,villeneuve,2023-06-18,70,20,1317,0.8588,,True,2023 Canadian Grand Prix
+2023_09,2023,9,Austrian Grand Prix,red_bull_ring,2023-07-02,71,20,1354,0.9047,,True,2023 Austrian Grand Prix
+2023_10,2023,10,British Grand Prix,silverstone,2023-07-09,52,20,971,0.8713,,True,2023 British Grand Prix
+2023_11,2023,11,Hungarian Grand Prix,hungaroring,2023-07-23,70,20,1252,0.9688,,True,2023 Hungarian Grand Prix
+2023_12,2023,12,Belgian Grand Prix,spa,2023-07-30,44,20,816,0.9326,,True,2023 Belgian Grand Prix
+2023_13,2023,13,Dutch Grand Prix,zandvoort,2023-08-27,72,20,1343,0.8466,,True,2023 Dutch Grand Prix
+2023_14,2023,14,Italian Grand Prix,monza,2023-09-03,51,20,958,1.0,,True,2023 Italian Grand Prix
+2023_15,2023,15,Singapore Grand Prix,singapore,2023-09-17,62,19,1088,0.7767,,True,2023 Singapore Grand Prix
+2023_16,2023,16,Japanese Grand Prix,suzuka,2023-09-24,53,20,880,0.8534,,True,2023 Japanese Grand Prix
+2023_17,2023,17,Qatar Grand Prix,lusail,2023-10-08,57,19,1006,0.8907,,True,2023 Qatar Grand Prix
+2023_18,2023,18,United States Grand Prix,cota,2023-10-22,56,20,1014,0.9931,,True,2023 United States Grand Prix
+2023_19,2023,19,Mexico City Grand Prix,rodriguez,2023-10-29,71,20,1282,0.8635,,True,2023 Mexico City Grand Prix
+2023_20,2023,20,São Paulo Grand Prix,interlagos,2023-11-05,71,20,1109,0.9684,Red flag in the first quarter,False,2023 São Paulo Grand Prix
+2023_21,2023,21,Las Vegas Grand Prix,las_vegas,2023-11-18,50,20,946,0.7125,,True,2023 Las Vegas Grand Prix
+2023_22,2023,22,Abu Dhabi Grand Prix,yas_marina,2023-11-26,58,20,1157,1.0,,True,2023 Abu Dhabi Grand Prix
+2024_01,2024,1,Bahrain Grand Prix,bahrain,2024-03-02,57,20,1129,0.9628,,True,2024 Bahrain Grand Prix
+2024_02,2024,2,Saudi Arabian Grand Prix,jeddah,2024-03-09,50,20,901,0.9234,,True,2024 Saudi Arabian Grand Prix
+2024_03,2024,3,Australian Grand Prix,albert_park,2024-03-24,58,19,998,0.9389,,True,2024 Australian Grand Prix
+2024_04,2024,4,Japanese Grand Prix,suzuka,2024-04-07,53,20,907,0.9537,Red flag in the first quarter,False,2024 Japanese Grand Prix
+2024_05,2024,5,Chinese Grand Prix,shanghai,2024-04-21,56,20,1032,0.7839,,True,2024 Chinese Grand Prix
+2024_06,2024,6,Miami Grand Prix,miami,2024-05-05,57,20,1111,0.883,,True,2024 Miami Grand Prix
+2024_07,2024,7,Emilia Romagna Grand Prix,imola,2024-05-19,63,20,1238,1.0,,True,2024 Emilia Romagna Grand Prix
+2024_08,2024,8,Monaco Grand Prix,monaco,2024-05-26,78,20,1237,0.9563,Red flag in the first quarter,False,2024 Monaco Grand Prix
+2024_09,2024,9,Canadian Grand Prix,villeneuve,2024-06-09,70,20,1272,0.7508,Wet race,False,2024 Canadian Grand Prix
+2024_10,2024,10,Spanish Grand Prix,catalunya,2024-06-23,66,20,1310,1.0,,True,2024 Spanish Grand Prix
+2024_11,2024,11,Austrian Grand Prix,red_bull_ring,2024-06-30,71,20,1405,0.9651,,True,2024 Austrian Grand Prix
+2024_12,2024,12,British Grand Prix,silverstone,2024-07-07,52,20,961,1.0,,True,2024 British Grand Prix
+2024_13,2024,13,Hungarian Grand Prix,hungaroring,2024-07-21,70,20,1355,0.9845,,True,2024 Hungarian Grand Prix
+2024_14,2024,14,Belgian Grand Prix,spa,2024-07-28,44,20,841,0.9774,,True,2024 Belgian Grand Prix
+2024_15,2024,15,Dutch Grand Prix,zandvoort,2024-08-25,72,20,1426,1.0,,True,2024 Dutch Grand Prix
+2024_16,2024,16,Italian Grand Prix,monza,2024-09-01,53,20,1008,1.0,,True,2024 Italian Grand Prix
+2024_17,2024,17,Azerbaijan Grand Prix,baku,2024-09-15,51,20,973,0.9353,,True,2024 Azerbaijan Grand Prix
+2024_18,2024,18,Singapore Grand Prix,singapore,2024-09-22,62,20,1177,1.0,,True,2024 Singapore Grand Prix
+2024_19,2024,19,United States Grand Prix,cota,2024-10-20,56,20,1059,0.8744,,True,2024 United States Grand Prix
+2024_20,2024,20,Mexico City Grand Prix,rodriguez,2024-10-27,71,20,1215,0.9095,,True,2024 Mexico City Grand Prix
+2024_21,2024,21,São Paulo Grand Prix,interlagos,2024-11-03,69,19,1135,0.7101,Wet race,False,2024 São Paulo Grand Prix
+2024_22,2024,22,Las Vegas Grand Prix,las_vegas,2024-11-23,50,20,938,1.0,,True,2024 Las Vegas Grand Prix
+2024_23,2024,23,Qatar Grand Prix,lusail,2024-12-01,57,20,943,0.7391,,True,2024 Qatar Grand Prix
+2024_24,2024,24,Abu Dhabi Grand Prix,yas_marina,2024-12-08,58,20,1035,0.9014,,True,2024 Abu Dhabi Grand Prix
+2025_01,2025,1,Australian Grand Prix,albert_park,2025-03-16,57,20,927,0.5987,Wet race,False,2025 Australian Grand Prix
+2025_02,2025,2,Chinese Grand Prix,shanghai,2025-03-23,56,20,1065,0.9333,,True,2025 Chinese Grand Prix
+2025_03,2025,3,Japanese Grand Prix,suzuka,2025-04-06,53,20,1059,1.0,,True,2025 Japanese Grand Prix
+2025_04,2025,4,Bahrain Grand Prix,bahrain,2025-04-13,57,20,1128,0.9291,,True,2025 Bahrain Grand Prix
+2025_05,2025,5,Saudi Arabian Grand Prix,jeddah,2025-04-20,50,20,898,0.9376,,True,2025 Saudi Arabian Grand Prix
+2025_06,2025,6,Miami Grand Prix,miami,2025-05-04,57,20,1005,0.8766,,True,2025 Miami Grand Prix
+2025_07,2025,7,Emilia Romagna Grand Prix,imola,2025-05-18,63,20,1207,0.8169,,True,2025 Emilia Romagna Grand Prix
+2025_08,2025,8,Monaco Grand Prix,monaco,2025-05-25,78,20,1425,0.8765,,True,2025 Monaco Grand Prix
+2025_09,2025,9,Spanish Grand Prix,catalunya,2025-06-01,66,19,1203,0.9044,,True,2025 Spanish Grand Prix
+2025_10,2025,10,Canadian Grand Prix,villeneuve,2025-06-15,70,20,1349,0.9199,,True,2025 Canadian Grand Prix
+2025_11,2025,11,Austrian Grand Prix,red_bull_ring,2025-06-29,70,20,1127,0.9379,,True,2025 Austrian Grand Prix
+2025_12,2025,12,British Grand Prix,silverstone,2025-07-06,52,20,826,0.5872,Wet race,False,2025 British Grand Prix
+2025_13,2025,13,Belgian Grand Prix,spa,2025-07-27,44,20,879,0.909,,True,2025 Belgian Grand Prix
+2025_14,2025,14,Hungarian Grand Prix,hungaroring,2025-08-03,70,20,1368,1.0,,True,2025 Hungarian Grand Prix
+2025_15,2025,15,Dutch Grand Prix,zandvoort,2025-08-31,72,20,1364,0.7683,,True,2025 Dutch Grand Prix
+2025_16,2025,16,Italian Grand Prix,monza,2025-09-07,53,20,975,0.9805,,True,2025 Italian Grand Prix
+2025_17,2025,17,Azerbaijan Grand Prix,baku,2025-09-21,51,20,968,0.8554,,True,2025 Azerbaijan Grand Prix
+2025_18,2025,18,Singapore Grand Prix,singapore,2025-10-05,62,20,1229,0.9675,,True,2025 Singapore Grand Prix
+2025_19,2025,19,United States Grand Prix,cota,2025-10-19,56,20,1067,0.9035,,True,2025 United States Grand Prix
+2025_20,2025,20,Mexico City Grand Prix,rodriguez,2025-10-26,71,20,1263,0.9351,,True,2025 Mexico City Grand Prix
+2025_21,2025,21,São Paulo Grand Prix,interlagos,2025-11-09,71,20,1251,0.8793,,True,2025 São Paulo Grand Prix
+2025_22,2025,22,Las Vegas Grand Prix,las_vegas,2025-11-22,50,20,886,0.895,,True,2025 Las Vegas Grand Prix
+2025_23,2025,23,Qatar Grand Prix,lusail,2025-11-30,57,20,1067,0.9278,,True,2025 Qatar Grand Prix
+2025_24,2025,24,Abu Dhabi Grand Prix,yas_marina,2025-12-07,58,20,1156,1.0,,True,2025 Abu Dhabi Grand Prix
+2026_01,2026,1,Australian Grand Prix,albert_park,2026-03-08,58,21,1007,0.8739,,True,2026 Australian Grand Prix
+2026_02,2026,2,Chinese Grand Prix,shanghai,2026-03-15,56,22,924,0.8149,,True,2026 Chinese Grand Prix
+2026_03,2026,3,Japanese Grand Prix,suzuka,2026-03-29,53,22,1107,0.8735,,True,2026 Japanese Grand Prix
+2026_04,2026,4,Miami Grand Prix,miami,2026-05-03,57,22,1040,0.8192,,True,2026 Miami Grand Prix
+2026_05,2026,5,Canadian Grand Prix,villeneuve,2026-05-24,68,22,1212,0.816,,True,2026 Canadian Grand Prix
+2026_06,2026,6,Monaco Grand Prix,monaco,2026-06-07,78,22,1452,0.8299,,True,2026 Monaco Grand Prix
+2026_07,2026,7,Barcelona Grand Prix,catalunya,2026-06-14,66,22,1236,0.9191,,True,2026 Barcelona Grand Prix
+2026_08,2026,8,Austrian Grand Prix,red_bull_ring,2026-06-28,71,22,1339,0.9335,,True,2026 Austrian Grand Prix
+2026_09,2026,9,British Grand Prix,silverstone,2026-07-05,52,22,1113,0.7871,,True,2026 British Grand Prix
+2026_10,2026,10,Belgian Grand Prix,spa,2026-07-19,44,22,872,0.8119,,True,2026 Belgian Grand Prix
+2026_11,2026,11,Hungarian Grand Prix,hungaroring,2026-07-26,70,22,1431,0.9413,,True,2026 Hungarian Grand Prix
+2026_12,2026,12,Dutch Grand Prix,zandvoort,2026-08-23,72,22,1368,0.8713,Red flag in the first quarter,False,2026 Dutch Grand Prix
+2026_13,2026,13,Italian Grand Prix,monza,2026-09-06,53,22,1054,0.9089,Red flag in the first quarter,False,2026 Italian Grand Prix

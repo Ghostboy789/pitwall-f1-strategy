@@ -1,0 +1,68 @@
+/// V3: what the optimiser claims against the limits fixed before any result existed.
+table 'Sanity Gate'
+	lineageTag: abf0270b-27ad-5c35-bc78-f8a45747df74
+
+	column Metric
+		dataType: string
+		lineageTag: db1a9c99-0d88-5b21-bd1c-5006329d99a5
+		summarizeBy: none
+		sourceColumn: metric
+
+		annotation SummarizationSetBy = User
+
+	column Observed
+		dataType: double
+		formatString: 0.00
+		lineageTag: c629bebd-c418-5400-9925-6af103da0091
+		summarizeBy: none
+		sourceColumn: observed
+
+		annotation SummarizationSetBy = User
+
+	column Limit
+		dataType: double
+		formatString: 0.00
+		lineageTag: 65d02e7e-cbf9-51c0-b723-492e67d6e102
+		summarizeBy: none
+		sourceColumn: limit
+
+		annotation SummarizationSetBy = User
+
+	column Passed
+		dataType: boolean
+		lineageTag: b4fa8e6d-a610-5079-9b25-cc160c5358ae
+		summarizeBy: none
+		sourceColumn: passed
+
+		annotation SummarizationSetBy = User
+
+	column 'Car-Races'
+		dataType: int64
+		formatString: 0
+		lineageTag: 244cf74d-4284-53c1-b70e-29603bfb52d4
+		summarizeBy: none
+		sourceColumn: car_races
+
+		annotation SummarizationSetBy = User
+
+	column Races
+		dataType: int64
+		formatString: 0
+		lineageTag: b4bb61d9-f5f7-50db-855d-2d2d93ad161b
+		summarizeBy: none
+		sourceColumn: races
+
+		annotation SummarizationSetBy = User
+
+	partition 'Sanity Gate' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("sanity_gate.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"metric", type text}, {"observed", type number}, {"limit", type number}, {"passed", type logical}, {"car_races", Int64.Type}, {"races", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

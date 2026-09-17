@@ -1,0 +1,311 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "name": "circuit_table",
+  "position": {
+    "x": 24,
+    "y": 458,
+    "z": 1600,
+    "height": 222,
+    "width": 736,
+    "tabOrder": 1600
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Circuit"
+                    }
+                  },
+                  "Property": "Circuit"
+                }
+              },
+              "queryRef": "Circuit.Circuit",
+              "nativeQueryRef": "Circuit",
+              "displayName": "Circuit"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Circuit"
+                    }
+                  },
+                  "Property": "Circuit Type"
+                }
+              },
+              "queryRef": "Circuit.Circuit Type",
+              "nativeQueryRef": "Circuit Type",
+              "displayName": "Type"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Races"
+                }
+              },
+              "queryRef": "Key Measures.Races",
+              "nativeQueryRef": "Races",
+              "displayName": "Races"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Overtakes per Race"
+                }
+              },
+              "queryRef": "Key Measures.Overtakes per Race",
+              "nativeQueryRef": "Overtakes per Race",
+              "displayName": "Passes / race"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Pit Stops per Car"
+                }
+              },
+              "queryRef": "Key Measures.Pit Stops per Car",
+              "nativeQueryRef": "Pit Stops per Car",
+              "displayName": "Stops / car"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Neutralised Lap Share"
+                }
+              },
+              "queryRef": "Key Measures.Neutralised Lap Share",
+              "nativeQueryRef": "Neutralised Lap Share",
+              "displayName": "Caution laps"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Key Measures"
+                    }
+                  },
+                  "Property": "Classified Finish Rate"
+                }
+              },
+              "queryRef": "Key Measures.Classified Finish Rate",
+              "nativeQueryRef": "Classified Finish Rate",
+              "displayName": "Finish rate"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Key Measures"
+                  }
+                },
+                "Property": "Overtakes per Race"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": false
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Circuit scorecard'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Semibold'', wf_segoe-ui_semibold, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11.0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Circuit scorecard table'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "156.8D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Circuit.Circuit"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "86.2D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Circuit.Circuit Type"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "62.7D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Races"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "101.9D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Overtakes per Race"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "94.1D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Pit Stops per Car"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "94.1D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Neutralised Lap Share"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "94.1D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Key Measures.Classified Finish Rate"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

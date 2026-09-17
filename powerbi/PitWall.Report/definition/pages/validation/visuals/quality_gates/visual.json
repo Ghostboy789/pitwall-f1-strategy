@@ -1,0 +1,219 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "name": "quality_gates",
+  "position": {
+    "x": 440,
+    "y": 468,
+    "z": 1500,
+    "height": 212,
+    "width": 400,
+    "tabOrder": 1500
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Quality Gate"
+                    }
+                  },
+                  "Property": "Gate"
+                }
+              },
+              "queryRef": "Quality Gate.Gate",
+              "nativeQueryRef": "Gate",
+              "displayName": "V5 gate"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Quality Gate"
+                    }
+                  },
+                  "Property": "Rows Checked"
+                }
+              },
+              "queryRef": "Quality Gate.Rows Checked",
+              "nativeQueryRef": "Rows Checked",
+              "displayName": "Rows"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Quality Gate"
+                    }
+                  },
+                  "Property": "Violations"
+                }
+              },
+              "queryRef": "Quality Gate.Violations",
+              "nativeQueryRef": "Violations",
+              "displayName": "Fails"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Quality Gate"
+                    }
+                  },
+                  "Property": "Allowed"
+                }
+              },
+              "queryRef": "Quality Gate.Allowed",
+              "nativeQueryRef": "Allowed",
+              "displayName": "Limit"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'V5 data-quality gates'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Semibold'', wf_segoe-ui_semibold, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11.0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Data-quality gates'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "198.2D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Quality Gate.Gate"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "63.7D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Quality Gate.Rows Checked"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "46.0D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Quality Gate.Violations"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "46.0D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Quality Gate.Allowed"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

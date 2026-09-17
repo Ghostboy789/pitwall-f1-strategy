@@ -1,0 +1,174 @@
+/// Dimension: one row per track layout, with its fitted circuit-level estimates.
+table Circuit
+	lineageTag: d63f6cc7-8665-54c1-862f-a05e8c96f9b0
+
+	column 'Circuit Key'
+		dataType: string
+		isHidden
+		lineageTag: de4552ca-053b-52b7-9999-73edb988ebfb
+		summarizeBy: none
+		sourceColumn: circuit_key
+
+		annotation SummarizationSetBy = User
+
+	column Circuit
+		dataType: string
+		lineageTag: 931e3cdf-7aa5-5f5c-87b5-a204e51059d0
+		summarizeBy: none
+		sourceColumn: circuit
+
+		annotation SummarizationSetBy = User
+
+	column 'Short Name'
+		dataType: string
+		lineageTag: 4d669c38-b2bb-5917-8cb1-92a82f41ab3e
+		summarizeBy: none
+		sourceColumn: short_name
+
+		annotation SummarizationSetBy = User
+
+	column 'Lap Length (km)'
+		dataType: double
+		formatString: 0.000
+		lineageTag: e99c3b6c-2d90-5771-89fb-dcd43ba54359
+		summarizeBy: none
+		sourceColumn: lap_km
+
+		annotation SummarizationSetBy = User
+
+	column 'DRS Zones'
+		dataType: int64
+		formatString: 0
+		lineageTag: c0efcfe9-a554-5517-aedc-f3b369818b5d
+		summarizeBy: none
+		sourceColumn: drs_zones
+
+		annotation SummarizationSetBy = User
+
+	column 'Circuit Type'
+		dataType: string
+		lineageTag: bdc61e69-827b-50f0-a002-a4b2e3ad3a59
+		summarizeBy: none
+		sourceColumn: circuit_type
+
+		annotation SummarizationSetBy = User
+
+	column 'Pass Chance per Lap'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 82e1b82e-7626-51a4-a8bf-c2b24062f126
+		summarizeBy: none
+		sourceColumn: pass_chance_per_lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Pass Chance Lower 95%'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 06bdfe70-8d5b-56d6-9b7f-8c4abebe4228
+		summarizeBy: none
+		sourceColumn: pass_chance_lo
+
+		annotation SummarizationSetBy = User
+
+	column 'Pass Chance Upper 95%'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 063df3a8-4a71-5cdc-8e5e-710066cf046d
+		summarizeBy: none
+		sourceColumn: pass_chance_hi
+
+		annotation SummarizationSetBy = User
+
+	column 'Cost of Being Stuck (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: 45cffddf-bc26-580f-a18f-d02fc6fd665e
+		summarizeBy: none
+		sourceColumn: cost_of_being_stuck_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Cost Lower 95% (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: e7f84488-a0bf-530a-99aa-13381a37b08c
+		summarizeBy: none
+		sourceColumn: cost_lo_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Cost Upper 95% (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: 65e66bee-a195-56e4-855e-d83eaf03f78e
+		summarizeBy: none
+		sourceColumn: cost_hi_s
+
+		annotation SummarizationSetBy = User
+
+	column 'At Ceiling'
+		dataType: boolean
+		lineageTag: e399c1de-fe87-5ab4-8717-ef7655718b80
+		summarizeBy: none
+		sourceColumn: at_ceiling
+
+		annotation SummarizationSetBy = User
+
+	column 'Pit Loss (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: 0ec6be23-d49d-500c-8cbf-b2dabadf6e3e
+		summarizeBy: none
+		sourceColumn: pit_loss_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Pit Loss SE (s)'
+		dataType: double
+		formatString: 0.00
+		lineageTag: cd41757d-93fd-5bbc-9e94-231d7681eecb
+		summarizeBy: none
+		sourceColumn: pit_loss_se_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Cautions per Race'
+		dataType: double
+		formatString: 0.00
+		lineageTag: 83b0582a-a88d-53fa-8a9d-1095c394eb08
+		summarizeBy: none
+		sourceColumn: expected_cautions_per_race
+
+		annotation SummarizationSetBy = User
+
+	column 'Overtaking Opportunities'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 8f46aedd-328a-5e46-895e-bdbce73d2cdd
+		summarizeBy: none
+		sourceColumn: opportunities
+
+		annotation SummarizationSetBy = User
+
+	column Passes
+		dataType: int64
+		formatString: #,0
+		lineageTag: 955d262d-6df9-5823-adc3-d9fa15a2fbba
+		summarizeBy: none
+		sourceColumn: passes
+
+		annotation SummarizationSetBy = User
+
+	partition Circuit = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("dim_circuit.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"circuit_key", type text}, {"circuit", type text}, {"short_name", type text}, {"lap_km", type number}, {"drs_zones", Int64.Type}, {"circuit_type", type text}, {"pass_chance_per_lap", type number}, {"pass_chance_lo", type number}, {"pass_chance_hi", type number}, {"cost_of_being_stuck_s", type number}, {"cost_lo_s", type number}, {"cost_hi_s", type number}, {"at_ceiling", type logical}, {"pit_loss_s", type number}, {"pit_loss_se_s", type number}, {"expected_cautions_per_race", type number}, {"opportunities", Int64.Type}, {"passes", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

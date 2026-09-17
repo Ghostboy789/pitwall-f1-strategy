@@ -1,0 +1,59 @@
+/// V5: structural data-quality gates run on every lap.
+table 'Quality Gate'
+	lineageTag: 2c980922-3a54-5d86-9319-c6595ad3c4e5
+
+	column Gate
+		dataType: string
+		lineageTag: e7eb5886-1056-504a-9790-c51f95e390e9
+		summarizeBy: none
+		sourceColumn: check
+
+		annotation SummarizationSetBy = User
+
+	column 'Rows Checked'
+		dataType: int64
+		formatString: 0
+		lineageTag: a9aa483a-145e-5198-a167-eb57ef8af484
+		summarizeBy: none
+		sourceColumn: n_checked
+
+		annotation SummarizationSetBy = User
+
+	column Violations
+		dataType: int64
+		formatString: #,0
+		lineageTag: 24ebae55-1c7c-512e-bdd2-ee47369e40fc
+		summarizeBy: none
+		sourceColumn: n_violations
+
+		annotation SummarizationSetBy = User
+
+	column Allowed
+		dataType: int64
+		formatString: 0
+		lineageTag: 32b314b6-0e45-52bd-acd5-6296af37aec5
+		summarizeBy: none
+		sourceColumn: allowed
+
+		annotation SummarizationSetBy = User
+
+	column Passed
+		dataType: boolean
+		lineageTag: c064f5b5-2748-5bd3-b850-f80efa6d84bc
+		summarizeBy: none
+		sourceColumn: passed
+
+		annotation SummarizationSetBy = User
+
+	partition 'Quality Gate' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("quality_gates.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"check", type text}, {"n_checked", Int64.Type}, {"n_violations", Int64.Type}, {"allowed", Int64.Type}, {"passed", type logical}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

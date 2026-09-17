@@ -1,0 +1,140 @@
+/// Fact: one row per car within reach of the car ahead on a green lap; Passed = 1 when the move was completed.
+table 'Overtaking Opportunity'
+	lineageTag: b1ccedf0-a03a-5f10-ab85-93d59398d54a
+
+	column 'Race ID'
+		dataType: string
+		isHidden
+		lineageTag: 2854bdf0-5a6c-5516-bcc5-0ad323475f8c
+		summarizeBy: none
+		sourceColumn: race_id
+
+		annotation SummarizationSetBy = User
+
+	column Lap
+		dataType: int64
+		formatString: 0
+		lineageTag: 422995cc-516e-5349-9bc5-e0b3eaba7cd1
+		summarizeBy: none
+		sourceColumn: lap
+
+		annotation SummarizationSetBy = User
+
+	column 'Driver Code'
+		dataType: string
+		isHidden
+		lineageTag: 16f2a473-be7e-52e4-be35-3c35dd1235ef
+		summarizeBy: none
+		sourceColumn: follower_code
+
+		annotation SummarizationSetBy = User
+
+	column 'Car Ahead'
+		dataType: string
+		lineageTag: 256094cd-1a59-5bfc-80fd-5be9f6e22041
+		summarizeBy: none
+		sourceColumn: leader_code
+
+		annotation SummarizationSetBy = User
+
+	column Position
+		dataType: int64
+		formatString: 0
+		lineageTag: 87806cb3-d406-514a-a249-727ce8d3d29d
+		summarizeBy: none
+		sourceColumn: position
+
+		annotation SummarizationSetBy = User
+
+	column 'Gap (s)'
+		dataType: double
+		formatString: 0.000
+		lineageTag: 8db441e5-6fe9-5816-8af6-f1ed6185e755
+		summarizeBy: none
+		sourceColumn: gap_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Gap Band'
+		dataType: string
+		lineageTag: 86fffa98-9228-5b5d-8cb2-b62b9495071c
+		summarizeBy: none
+		sourceColumn: gap_band
+		sortByColumn: 'Gap Band Order'
+
+		annotation SummarizationSetBy = User
+
+	column 'Gap Band Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 971cecfc-4246-53ff-8a1f-75281cf77a12
+		summarizeBy: none
+		sourceColumn: gap_band_order
+
+		annotation SummarizationSetBy = User
+
+	column 'Pace Advantage (s)'
+		dataType: double
+		formatString: 0.000
+		lineageTag: 2d29d325-eb6e-5df3-b186-fdc87c1d99b0
+		summarizeBy: none
+		sourceColumn: pace_advantage_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Pace Advantage Band'
+		dataType: string
+		lineageTag: 49c85540-e2cc-535e-b8b1-b2c0f68e4893
+		summarizeBy: none
+		sourceColumn: pace_band
+		sortByColumn: 'Pace Band Order'
+
+		annotation SummarizationSetBy = User
+
+	column 'Pace Band Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 04874ef5-981f-571c-a867-d3ede3acddd7
+		summarizeBy: none
+		sourceColumn: pace_band_order
+
+		annotation SummarizationSetBy = User
+
+	column DRS
+		dataType: string
+		lineageTag: 266aa5f6-2b80-5cc8-a799-f451d3f772a7
+		summarizeBy: none
+		sourceColumn: drs
+
+		annotation SummarizationSetBy = User
+
+	column Passed
+		dataType: int64
+		formatString: 0
+		lineageTag: da08908b-5592-5516-abe4-c2ed8afb688f
+		summarizeBy: sum
+		sourceColumn: passed
+
+		annotation SummarizationSetBy = User
+
+	column 'Race Progress'
+		dataType: double
+		formatString: 0%
+		lineageTag: ccef938e-788a-5e00-af97-688fdfd61dd1
+		summarizeBy: none
+		sourceColumn: race_progress
+
+		annotation SummarizationSetBy = User
+
+	partition 'Overtaking Opportunity' = m
+		mode: import
+		source =
+				let
+				    Source = Parquet.Document(Binary.Buffer(PitWallFile("fact_overtaking.parquet"))),
+				    Typed = Table.TransformColumnTypes(Source, {{"race_id", type text}, {"lap", Int64.Type}, {"follower_code", type text}, {"leader_code", type text}, {"position", Int64.Type}, {"gap_s", type number}, {"gap_band", type text}, {"gap_band_order", Int64.Type}, {"pace_advantage_s", type number}, {"pace_band", type text}, {"pace_band_order", Int64.Type}, {"drs", type text}, {"passed", Int64.Type}, {"race_progress", type number}})
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

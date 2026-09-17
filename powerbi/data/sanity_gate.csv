@@ -1,0 +1,4 @@
+metric,observed,limit,passed,car_races,races
+Mean claimed gain (s),17.6127229504003,2.0,False,706,40
+Share of car-races 'improved',0.8611898016997167,0.7,False,706,40
+Largest single claimed gain (s),98.87911470855943,30.0,False,706,40

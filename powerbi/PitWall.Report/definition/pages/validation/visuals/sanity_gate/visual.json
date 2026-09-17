@@ -1,0 +1,249 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "name": "sanity_gate",
+  "position": {
+    "x": 24,
+    "y": 468,
+    "z": 1400,
+    "height": 212,
+    "width": 400,
+    "tabOrder": 1400
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sanity Gate"
+                    }
+                  },
+                  "Property": "Metric"
+                }
+              },
+              "queryRef": "Sanity Gate.Metric",
+              "nativeQueryRef": "Metric",
+              "displayName": "V3 metric"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sanity Gate"
+                    }
+                  },
+                  "Property": "Observed"
+                }
+              },
+              "queryRef": "Sanity Gate.Observed",
+              "nativeQueryRef": "Observed",
+              "displayName": "Observed"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sanity Gate"
+                    }
+                  },
+                  "Property": "Limit"
+                }
+              },
+              "queryRef": "Sanity Gate.Limit",
+              "nativeQueryRef": "Limit",
+              "displayName": "Limit"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sanity Gate"
+                    }
+                  },
+                  "Property": "Passed"
+                }
+              },
+              "queryRef": "Sanity Gate.Passed",
+              "nativeQueryRef": "Passed",
+              "displayName": "Passed"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'V3 sanity gate: optimiser vs real strategists'"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Semibold'', wf_segoe-ui_semibold, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "11.0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "altText": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Sanity gate against limits'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "177.0D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sanity Gate.Metric"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "69.3D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sanity Gate.Observed"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "53.9D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sanity Gate.Limit"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "53.9D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Sanity Gate.Passed"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "wordWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Key Measures"
+                        }
+                      },
+                      "Property": "Gate Colour"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Sanity Gate.Passed"
+          }
+        }
+      ]
+    }
+  }
+}

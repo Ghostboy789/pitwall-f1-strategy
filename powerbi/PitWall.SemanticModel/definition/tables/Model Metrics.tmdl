@@ -1,0 +1,160 @@
+/// Headline pipeline metrics, one row.
+table 'Model Metrics'
+	lineageTag: 7a200ed6-02d9-5e6e-9ec5-dcb4a26af572
+
+	column n_races
+		dataType: int64
+		isHidden
+		lineageTag: b3a4e7e8-db4a-5be6-b924-a1d2318d35f2
+		summarizeBy: none
+		sourceColumn: n_races
+
+		annotation SummarizationSetBy = User
+
+	column n_races_used_for_strategy
+		dataType: int64
+		isHidden
+		lineageTag: 79602271-6ccb-5628-8a60-6e4595a31f04
+		summarizeBy: none
+		sourceColumn: n_races_used_for_strategy
+
+		annotation SummarizationSetBy = User
+
+	column n_laps_raw
+		dataType: int64
+		isHidden
+		lineageTag: 5adb5a33-b04c-5455-a3ff-0d980d7b06fd
+		summarizeBy: none
+		sourceColumn: n_laps_raw
+
+		annotation SummarizationSetBy = User
+
+	column n_laps_modelled
+		dataType: int64
+		isHidden
+		lineageTag: 23f30db4-355c-5634-812f-418e1b799cb1
+		summarizeBy: none
+		sourceColumn: n_laps_modelled
+
+		annotation SummarizationSetBy = User
+
+	column n_circuits
+		dataType: int64
+		isHidden
+		lineageTag: 3e79cbdd-162b-5d31-a570-20cae6711352
+		summarizeBy: none
+		sourceColumn: n_circuits
+
+		annotation SummarizationSetBy = User
+
+	column n_drivers
+		dataType: int64
+		isHidden
+		lineageTag: 70a48ad2-0e7c-5f56-8e82-ce2bd24f9444
+		summarizeBy: none
+		sourceColumn: n_drivers
+
+		annotation SummarizationSetBy = User
+
+	column n_teams
+		dataType: int64
+		isHidden
+		lineageTag: 0db53ab0-92a1-5c2f-90ca-3a64a98340c8
+		summarizeBy: none
+		sourceColumn: n_teams
+
+		annotation SummarizationSetBy = User
+
+	column n_stints
+		dataType: int64
+		isHidden
+		lineageTag: c32cff2d-a986-57b6-8a36-0ebe9e497943
+		summarizeBy: none
+		sourceColumn: n_stints
+
+		annotation SummarizationSetBy = User
+
+	column share_stints_censored
+		dataType: double
+		isHidden
+		lineageTag: 075d6187-ce21-5938-8aad-0caa8732f5cb
+		summarizeBy: none
+		sourceColumn: share_stints_censored
+
+		annotation SummarizationSetBy = User
+
+	column n_opportunities
+		dataType: int64
+		isHidden
+		lineageTag: c7df4f83-9394-530b-a38b-4d4a1d2d3320
+		summarizeBy: none
+		sourceColumn: n_opportunities
+
+		annotation SummarizationSetBy = User
+
+	column n_passes
+		dataType: int64
+		isHidden
+		lineageTag: 0eef3c56-5d35-53e1-837d-7ad95a7a3bb6
+		summarizeBy: none
+		sourceColumn: n_passes
+
+		annotation SummarizationSetBy = User
+
+	column overtaking_auc
+		dataType: double
+		isHidden
+		lineageTag: 5737f9e7-4335-5e91-9027-b0c35f76268e
+		summarizeBy: none
+		sourceColumn: overtaking_auc
+
+		annotation SummarizationSetBy = User
+
+	column overtaking_brier
+		dataType: double
+		isHidden
+		lineageTag: 920f800a-21e6-58d3-a900-767b65f61f4b
+		summarizeBy: none
+		sourceColumn: overtaking_brier
+
+		annotation SummarizationSetBy = User
+
+	column overtaking_ece
+		dataType: double
+		isHidden
+		lineageTag: b2effb68-bbb0-52a8-b040-1002821435ff
+		summarizeBy: none
+		sourceColumn: overtaking_ece
+
+		annotation SummarizationSetBy = User
+
+	column gates_passed
+		dataType: int64
+		isHidden
+		lineageTag: 6b6bb1f4-31cb-51b9-8e6f-7e9cd8a79b7d
+		summarizeBy: none
+		sourceColumn: gates_passed
+
+		annotation SummarizationSetBy = User
+
+	column gates_total
+		dataType: int64
+		isHidden
+		lineageTag: a7908116-6ed0-5dfd-b772-4c0dcd3aea91
+		summarizeBy: none
+		sourceColumn: gates_total
+
+		annotation SummarizationSetBy = User
+
+	partition 'Model Metrics' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("model_metrics.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"n_races", Int64.Type}, {"n_races_used_for_strategy", Int64.Type}, {"n_laps_raw", Int64.Type}, {"n_laps_modelled", Int64.Type}, {"n_circuits", Int64.Type}, {"n_drivers", Int64.Type}, {"n_teams", Int64.Type}, {"n_stints", Int64.Type}, {"share_stints_censored", type number}, {"n_opportunities", Int64.Type}, {"n_passes", Int64.Type}, {"overtaking_auc", type number}, {"overtaking_brier", type number}, {"overtaking_ece", type number}, {"gates_passed", Int64.Type}, {"gates_total", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

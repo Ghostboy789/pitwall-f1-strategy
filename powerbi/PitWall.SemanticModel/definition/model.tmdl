@@ -1,0 +1,30 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["DataFolder", "PitWallFile", "Key Measures", "Race", "Circuit", "Driver", "Tyre Compound", "Lap", "Result", "Stint", "Overtaking Opportunity", "Tyre Wear Estimate", "Validation Check", "Sanity Gate", "Strategy Backtest", "Quality Gate", "Overtaking Calibration", "Estimator Ordering", "Model Metrics"]
+
+ref table 'Key Measures'
+ref table Race
+ref table Circuit
+ref table Driver
+ref table 'Tyre Compound'
+ref table Lap
+ref table Result
+ref table Stint
+ref table 'Overtaking Opportunity'
+ref table 'Tyre Wear Estimate'
+ref table 'Validation Check'
+ref table 'Sanity Gate'
+ref table 'Strategy Backtest'
+ref table 'Quality Gate'
+ref table 'Overtaking Calibration'
+ref table 'Estimator Ordering'
+ref table 'Model Metrics'

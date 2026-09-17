@@ -1,0 +1,58 @@
+/// Dimension: every driver in the data, keyed by three-letter code.
+table Driver
+	lineageTag: a7bdaf22-0f24-515d-9dd4-54a0b0136318
+
+	column 'Driver Code'
+		dataType: string
+		lineageTag: 3e8ee37a-086b-574d-b124-7088f2d753d8
+		summarizeBy: none
+		sourceColumn: driver_code
+
+		annotation SummarizationSetBy = User
+
+	column Driver
+		dataType: string
+		lineageTag: 6b0aaa2a-11fe-587b-8d94-fbdeadcfc479
+		summarizeBy: none
+		sourceColumn: driver
+
+		annotation SummarizationSetBy = User
+
+	column 'Latest Team'
+		dataType: string
+		lineageTag: accb04de-5945-597b-aa41-ae723b26007f
+		summarizeBy: none
+		sourceColumn: latest_team
+
+		annotation SummarizationSetBy = User
+
+	column 'First Season'
+		dataType: int64
+		formatString: 0
+		lineageTag: 3e8de6c6-eb4b-57b0-b34e-2fe8ca6660b5
+		summarizeBy: none
+		sourceColumn: first_season
+
+		annotation SummarizationSetBy = User
+
+	column 'Last Season'
+		dataType: int64
+		formatString: 0
+		lineageTag: eb092f2e-0816-54f3-8f8e-73e13a9108cb
+		summarizeBy: none
+		sourceColumn: last_season
+
+		annotation SummarizationSetBy = User
+
+	partition Driver = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("dim_driver.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"driver_code", type text}, {"driver", type text}, {"latest_team", type text}, {"first_season", Int64.Type}, {"last_season", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

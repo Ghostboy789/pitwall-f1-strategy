@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "PitWall"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9205be0b-eccc-45e4-be86-04332811baac"
+  }
+}

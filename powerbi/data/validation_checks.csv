@@ -1,0 +1,7 @@
+check_id,check,status,result,status_order
+V1,"Predict finishing order, held-out seasons",Not run,"Listed in the plan, not dropped",3
+V2,Overtaking model calibrated (out-of-fold),Pass,"AUC 0.915 · Brier 0.0487 · ECE 0.0025 on 64,646 opportunities",4
+V3,Optimiser gain stays plausible,Fail,Mean claimed gain 17.6 s against a 2.0 s limit,1
+V4,Ablations,Partial,Leakage only: removing the pace feature costs 0.015 AUC,2
+V5,Structural data-quality gates,Pass,"8 of 8 across 203,644 laps",4
+V6,Simulator prices strategy like real races,Fail,Extra stop costs +9.9 s more in simulation than in real races,1

@@ -1,0 +1,71 @@
+/// How often each tyre-wear estimator gets the physically correct compound order.
+table 'Estimator Ordering'
+	lineageTag: ac2eb09b-2166-5a29-9fb7-e5866b2f60f7
+
+	column Estimator
+		dataType: string
+		lineageTag: 8be7f828-70af-5a8d-9fc4-72037e2072b8
+		summarizeBy: none
+		sourceColumn: estimator
+		sortByColumn: 'Estimator Order'
+
+		annotation SummarizationSetBy = User
+
+	column 'Estimator Order'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 0ee29c0e-b0d7-5ef9-8dd5-81cae2c9eba6
+		summarizeBy: none
+		sourceColumn: estimator_order
+
+		annotation SummarizationSetBy = User
+
+	column 'Circuits Where Soft Wears Fastest'
+		dataType: int64
+		formatString: 0
+		lineageTag: e7a8e4aa-7cba-5bc7-91a9-53348d78fca4
+		summarizeBy: sum
+		sourceColumn: circuits_soft_wears_fastest
+
+		annotation SummarizationSetBy = User
+
+	column Circuits
+		dataType: int64
+		formatString: 0
+		lineageTag: a0ee1909-9784-5597-a362-915709e18cd6
+		summarizeBy: sum
+		sourceColumn: circuits
+
+		annotation SummarizationSetBy = User
+
+	column 'Impossible Cells'
+		dataType: int64
+		formatString: 0
+		lineageTag: ae67595c-b7b6-50b9-b912-45aa7056efc9
+		summarizeBy: sum
+		sourceColumn: impossible_cells
+
+		annotation SummarizationSetBy = User
+
+	column Cells
+		dataType: int64
+		formatString: 0
+		lineageTag: b8aeba6a-7101-52bd-b440-8f9de3f0516a
+		summarizeBy: sum
+		sourceColumn: cells
+
+		annotation SummarizationSetBy = User
+
+	partition 'Estimator Ordering' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("tyre_estimator_ordering.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"estimator", type text}, {"estimator_order", Int64.Type}, {"circuits_soft_wears_fastest", Int64.Type}, {"circuits", Int64.Type}, {"impossible_cells", Int64.Type}, {"cells", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

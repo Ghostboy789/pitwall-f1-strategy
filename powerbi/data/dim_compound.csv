@@ -1,0 +1,6 @@
+compound_rank,compound_order
+SOFTEST,1
+MIDDLE,2
+HARDEST,3
+WET,4
+UNKNOWN,5

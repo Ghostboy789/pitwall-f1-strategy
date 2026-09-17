@@ -1,0 +1,15 @@
+/// Folder or URL the report loads its data from. Point it at a local clone's powerbi\data\ folder to work offline.
+expression DataFolder = "https://raw.githubusercontent.com/Ghostboy789/pitwall-f1-strategy/main/powerbi/data/" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 5c0db354-8ab5-5ec9-b305-95eccede5f51
+
+	annotation PBI_ResultType = Text
+
+/// Reads one data file from DataFolder, over HTTPS or from disk.
+expression PitWallFile =
+		(name as text) as binary =>
+		    if Text.StartsWith(DataFolder, "http")
+		    then Web.Contents(DataFolder, [RelativePath = name])
+		    else File.Contents(DataFolder & name)
+	lineageTag: 15be2f21-6903-5f3e-a833-e3ce1b65f6db
+
+	annotation PBI_ResultType = Function

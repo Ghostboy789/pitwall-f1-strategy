@@ -1,0 +1,312 @@
+/// All report measures, grouped by page.
+table 'Key Measures'
+	lineageTag: 6f1b4232-7d6e-5019-8237-25ed6cd975c0
+
+	/// Grands Prix in the current filter.
+	measure Races = COUNTROWS ( Race )
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: 783f8f99-a7bd-51fb-af37-d23ff516c279
+
+	measure Seasons = DISTINCTCOUNT ( Race[Season] )
+		formatString: 0
+		displayFolder: Overview
+		lineageTag: 49371f04-7015-5c18-91fe-fb011f29a9cb
+
+	measure 'Circuits Raced' = DISTINCTCOUNT ( Race[Circuit Key] )
+		formatString: 0
+		displayFolder: Overview
+		lineageTag: 1d20e79e-e8cf-59d4-81e6-b8323890d722
+
+	/// Every car's every lap in the timing data.
+	measure 'Laps Analysed' = COUNTROWS ( Lap )
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: a09d6823-cd2c-5193-9f2f-626257f55706
+
+	measure Drivers = DISTINCTCOUNT ( Lap[Driver Code] )
+		formatString: 0
+		displayFolder: Overview
+		lineageTag: dfff1e9c-fa25-5bc3-9369-9ba2535dfca9
+
+	measure 'Car Starts' = COUNTROWS ( Result )
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: 20f14501-9d4e-5c51-a496-5da972b7867a
+
+	/// Stints that ended in the pit lane.
+	measure 'Pit Stops' = CALCULATE ( COUNTROWS ( Stint ), Stint[Ended In Pit] = TRUE () )
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: baa0f83b-2ba0-56e4-a0e8-03e73f984e2e
+
+	measure 'Pit Stops per Car' = DIVIDE ( [Pit Stops], [Car Starts] )
+		formatString: 0.00
+		displayFolder: Overview
+		lineageTag: 0f96634a-937d-5160-9639-8f1e4e326a6b
+
+	/// Completed on-track passes on green-flag laps.
+	measure Overtakes = SUM ( 'Overtaking Opportunity'[Passed] )
+		formatString: #,0
+		displayFolder: Overview
+		lineageTag: 540d12ed-517d-5f3b-bb10-633d9094f75b
+
+	measure 'Overtakes per Race' = DIVIDE ( [Overtakes], [Races] )
+		formatString: 0.0
+		displayFolder: Overview
+		lineageTag: c8ee4cce-3fd5-55b8-9abc-76c58fa822d3
+
+	measure 'Green Flag Lap Share' = DIVIDE ( CALCULATE ( COUNTROWS ( Lap ), Lap[Green Flag] = TRUE () ), [Laps Analysed] )
+		formatString: 0.0%
+		displayFolder: Overview
+		lineageTag: fe05eaac-3125-5104-a23e-f4579afda888
+
+	/// Laps under safety car, virtual safety car or red flag.
+	measure 'Neutralised Lap Share' = 1 - [Green Flag Lap Share]
+		formatString: 0.0%
+		displayFolder: Overview
+		lineageTag: 8f0ea324-4744-5f17-a82b-59917ec10a67
+
+	/// Share of laps in the current filter run on this compound rank.
+	measure 'Lap Share' = DIVIDE ( [Laps Analysed], CALCULATE ( [Laps Analysed], REMOVEFILTERS ( 'Tyre Compound' ) ) )
+		formatString: 0.0%
+		displayFolder: Overview
+		lineageTag: 83f958d8-7acf-54bd-a87e-0cb65fad25fb
+
+	measure 'Classified Finish Rate' = DIVIDE ( CALCULATE ( COUNTROWS ( Result ), Result[Classified] = TRUE () ), [Car Starts] )
+		formatString: 0.0%
+		displayFolder: Overview
+		lineageTag: ae5177ab-2c93-56fb-bda8-c476da7d6feb
+
+	/// Grid position minus finishing position, classified finishers only.
+	measure 'Avg Positions Gained' = AVERAGE ( Result[Positions Gained] )
+		formatString: +0.00;-0.00;0.00
+		displayFolder: Overview
+		lineageTag: 489863f8-d87c-510a-97d7-ebbcaa5e80ab
+
+	/// Races removed from strategy models by rules written in advance.
+	measure 'Races Excluded' = CALCULATE ( COUNTROWS ( Race ), Race[Used In Strategy Models] = FALSE () )
+		formatString: 0
+		displayFolder: Overview
+		lineageTag: 9a94baac-e0a9-59d3-b56b-f6db1417fc00
+
+	measure Stints = COUNTROWS ( Stint )
+		formatString: #,0
+		displayFolder: Tyres
+		lineageTag: df0e7fdf-62a0-5ce6-9d76-ce5c0326bfc2
+
+	measure 'Avg Stint Length (laps)' = AVERAGE ( Stint[Stint Length (laps)] )
+		formatString: 0.0
+		displayFolder: Tyres
+		lineageTag: f106ccf6-1fc3-5b98-af62-1c8e0a4e4841
+
+	/// Stints whose tyre life was never observed to its end: the survivorship problem.
+	measure 'Censored Stint Share' = DIVIDE ( CALCULATE ( COUNTROWS ( Stint ), Stint[Tyre Life Observed] = FALSE () ), [Stints] )
+		formatString: 0.0%
+		displayFolder: Tyres
+		lineageTag: c592a356-dc5c-582d-aae3-77e57aa69dec
+
+	/// Pace-lap time minus the race's median pace lap.
+	measure 'Avg Pace Delta (s)' = AVERAGE ( Lap[Delta to Race Median (s)] )
+		formatString: +0.000;-0.000;0.000
+		displayFolder: Tyres
+		lineageTag: 08715a29-7a6f-5387-bcff-bec54de75e2d
+
+	measure 'Tyre Wear (s per lap)' = AVERAGE ( 'Tyre Wear Estimate'[Wear (s per lap)] )
+		formatString: 0.000
+		displayFolder: Tyres
+		lineageTag: a720cc77-e524-5aaa-aaa5-e6d2214031f6
+
+	measure 'Circuits Soft Wears Fastest' = SUM ( 'Estimator Ordering'[Circuits Where Soft Wears Fastest] )
+		formatString: 0
+		displayFolder: Tyres
+		lineageTag: 3417037d-8fb2-5599-a8bb-6477ecf89088
+
+	/// Circuit-compound cells where a tyre gets faster with age.
+	measure 'Impossible Wear Cells' = SUM ( 'Estimator Ordering'[Impossible Cells] )
+		formatString: 0
+		displayFolder: Tyres
+		lineageTag: 920991c7-dcc1-586e-909e-0393143ab73f
+
+	measure 'Soft Wears Fastest (Naive)' = CALCULATE ( [Circuits Soft Wears Fastest], 'Estimator Ordering'[Estimator Order] = 1 )
+		formatString: 0
+		displayFolder: Tyres
+		lineageTag: 05c9da12-4cb4-5209-83a0-fbe2549dd1aa
+
+	measure 'Soft Wears Fastest (Corrected)' = CALCULATE ( [Circuits Soft Wears Fastest], 'Estimator Ordering'[Estimator Order] = 3 )
+		formatString: 0
+		displayFolder: Tyres
+		lineageTag: 4bb29d92-eb69-570b-a725-d4d1545e0132
+
+	measure Opportunities = COUNTROWS ( 'Overtaking Opportunity' )
+		formatString: #,0
+		displayFolder: Overtaking
+		lineageTag: 9a55ee5f-80ae-5187-86e9-bd29e150e916
+
+	/// Share of opportunities where the pass was completed that lap.
+	measure 'Pass Rate' = DIVIDE ( [Overtakes], [Opportunities] )
+		formatString: 0.0%
+		displayFolder: Overtaking
+		lineageTag: 1ffbd513-5986-5e43-93a7-2aba4fd2c831
+
+	/// Out-of-fold, grouped by race.
+	measure 'Model AUC' = MAX ( 'Model Metrics'[overtaking_auc] )
+		formatString: 0.000
+		displayFolder: Overtaking
+		lineageTag: b3c88c58-679e-5b5d-a9cb-78a1b0d7231d
+
+	measure 'Model Brier Score' = MAX ( 'Model Metrics'[overtaking_brier] )
+		formatString: 0.0000
+		displayFolder: Overtaking
+		lineageTag: dd13c974-8bf5-524a-917f-93ce7afca56e
+
+	measure 'Calibration Error (ECE)' = MAX ( 'Model Metrics'[overtaking_ece] )
+		formatString: 0.0000
+		displayFolder: Overtaking
+		lineageTag: f450804e-3034-5169-b7a6-c44e86b52de6
+
+	measure 'Predicted Pass Rate' = AVERAGE ( 'Overtaking Calibration'[Predicted] )
+		formatString: 0.0%
+		displayFolder: Overtaking
+		lineageTag: ae999b4d-c3b2-56cf-b707-6e429bb3da3b
+
+	measure 'Observed Pass Rate' = AVERAGE ( 'Overtaking Calibration'[Observed] )
+		formatString: 0.0%
+		displayFolder: Overtaking
+		lineageTag: 3c88b2f0-05d5-5e00-ae76-8d5402c345d0
+
+	/// Time lost stuck behind a car 0.5 s/lap slower, 1 s ahead in DRS range, with 25 laps left.
+	measure 'Cost of Being Stuck (s)' = AVERAGE ( Circuit[Cost of Being Stuck (s)] )
+		formatString: 0.0
+		displayFolder: Circuits
+		lineageTag: 7f3b0c9f-ef85-5028-a204-1d67719200ce
+
+	measure 'Pass Chance per Lap' = AVERAGE ( Circuit[Pass Chance per Lap] )
+		formatString: 0.0%
+		displayFolder: Circuits
+		lineageTag: d987fa3c-4e85-574a-9619-920ad3eb7698
+
+	/// Time a pit stop costs, estimated from the data and pooled toward the field mean.
+	measure 'Pit Loss (s)' = AVERAGE ( Circuit[Pit Loss (s)] )
+		formatString: 0.0
+		displayFolder: Circuits
+		lineageTag: 056fc496-c75c-58ed-9b5d-458dda5c8bf8
+
+	measure 'Cautions per Race' = AVERAGE ( Circuit[Cautions per Race] )
+		formatString: 0.00
+		displayFolder: Circuits
+		lineageTag: e2eff6ff-926f-56c3-a94a-34e9307f0ee0
+
+	measure '95% Interval' = IF ( HASONEVALUE ( Circuit[Circuit] ) && NOT ISBLANK ( [Cost of Being Stuck (s)] ), FORMAT ( MIN ( Circuit[Cost Lower 95% (s)] ), "0.0" ) & " – " & FORMAT ( MAX ( Circuit[Cost Upper 95% (s)] ), "0.0" ) )
+		displayFolder: Circuits
+		lineageTag: 37cdb158-d7a5-5fb3-a791-c23f1ecc5362
+
+	/// Ratio of the cost of being stuck; Monaco sits at the ceiling, so this is a floor.
+	measure 'Monaco vs COTA' =
+			VAR m = CALCULATE ( [Cost of Being Stuck (s)], REMOVEFILTERS ( Circuit ), Circuit[Circuit Key] = "monaco" )
+			VAR c = CALCULATE ( [Cost of Being Stuck (s)], REMOVEFILTERS ( Circuit ), Circuit[Circuit Key] = "cota" )
+			RETURN DIVIDE ( m, c )
+		formatString: 0.0"×"
+		displayFolder: Circuits
+		lineageTag: bac389dd-aa8a-5467-bcc7-80766bff917c
+
+	/// Among circuits with at least five races, the minimum for a headline claim.
+	measure 'Most Costly Circuit' = MAXX ( TOPN ( 1, FILTER ( Circuit, NOT ISBLANK ( Circuit[Cost of Being Stuck (s)] ) && CALCULATE ( COUNTROWS ( Race ) ) >= 5 ), Circuit[Cost of Being Stuck (s)], DESC ), Circuit[Short Name] )
+		displayFolder: Circuits
+		lineageTag: 2d2e817e-7651-5313-9c69-e957ceb08260
+
+	/// Among circuits with at least five races, the minimum for a headline claim.
+	measure 'Least Costly Circuit' = MAXX ( TOPN ( 1, FILTER ( Circuit, NOT ISBLANK ( Circuit[Cost of Being Stuck (s)] ) && CALCULATE ( COUNTROWS ( Race ) ) >= 5 ), Circuit[Cost of Being Stuck (s)], ASC ), Circuit[Short Name] )
+		displayFolder: Circuits
+		lineageTag: 7e5cc2d2-7abf-5457-875d-f0c9b9fb81f2
+
+	measure 'Checks Passed' = CALCULATE ( COUNTROWS ( 'Validation Check' ), 'Validation Check'[Status] = "Pass" )
+		formatString: 0
+		displayFolder: Validation
+		lineageTag: a61cae55-0aec-5a31-b86b-7ed77e376cb6
+
+	measure 'Checks Failed' = CALCULATE ( COUNTROWS ( 'Validation Check' ), 'Validation Check'[Status] = "Fail" )
+		formatString: 0
+		displayFolder: Validation
+		lineageTag: 7df491dd-8e85-584f-bf5a-fc29a7df80e5
+
+	measure 'Checks Total' = COUNTROWS ( 'Validation Check' )
+		formatString: 0
+		displayFolder: Validation
+		lineageTag: 7bfbda70-ff6b-5c62-bc86-0a0572af5ed4
+
+	/// V3: what the optimiser claims to gain per car-race over real strategy.
+	measure 'Mean Claimed Gain (s)' = CALCULATE ( MAX ( 'Sanity Gate'[Observed] ), 'Sanity Gate'[Metric] = "Mean claimed gain (s)" )
+		formatString: 0.0
+		displayFolder: Validation
+		lineageTag: 4010cb52-97a1-561b-8f9c-7ad6aaa8ed91
+
+	measure 'Gain Limit (s)' = CALCULATE ( MAX ( 'Sanity Gate'[Limit] ), 'Sanity Gate'[Metric] = "Mean claimed gain (s)" )
+		formatString: 0.0
+		displayFolder: Validation
+		lineageTag: ad1529fa-29ee-5f67-a403-13baeb951fff
+
+	measure 'Data Gates Passed' = CALCULATE ( COUNTROWS ( 'Quality Gate' ), 'Quality Gate'[Passed] = TRUE () )
+		formatString: 0
+		displayFolder: Validation
+		lineageTag: 04e54f36-0dd7-59e3-8cdf-5e24d1fce4e8
+
+	measure 'Data Gates Total' = COUNTROWS ( 'Quality Gate' )
+		formatString: 0
+		displayFolder: Validation
+		lineageTag: d21090ba-f376-5ed3-ad34-070b152f4e83
+
+	measure 'Backtest Estimate (s)' = SUM ( 'Strategy Backtest'[Estimate (s)] )
+		formatString: +0.0;-0.0;0.0
+		displayFolder: Validation
+		lineageTag: a65b3ac3-5cbc-50bd-8076-541aafb2ee7e
+
+	/// V6: how much more the simulator charges for an extra stop than real races do.
+	measure 'Extra Stop Mispricing (s)' = CALCULATE ( [Backtest Estimate (s)], 'Strategy Backtest'[Source] = "Simulator − real", 'Strategy Backtest'[Strategy Cost] = "Extra pit stop" )
+		formatString: +0.0;-0.0;0.0
+		displayFolder: Validation
+		lineageTag: 6dea479b-17c0-5630-9183-2accdf919e66
+
+	/// Hex colour for a check's status.
+	measure 'Status Colour' = SWITCH ( SELECTEDVALUE ( 'Validation Check'[Status] ), "Pass", "#1B9E77", "Fail", "#E4572E", "Partial", "#F2A541", "#7A8B9C" )
+		displayFolder: Validation
+		lineageTag: 232d37e8-62c6-508e-af6e-7556b742abd8
+
+	/// Teal for places gained, coral for places lost.
+	measure 'Gain Colour' = IF ( [Avg Positions Gained] >= 0, "#0F7C8C", "#E4572E" )
+		displayFolder: Colours
+		lineageTag: 67b28684-cc79-5204-9c79-81badbbd7b1c
+
+	/// Racing red where the estimate sits at its ceiling (a floor, not a point).
+	measure 'Cost Colour' = IF ( SELECTEDVALUE ( Circuit[At Ceiling] ), "#E10600", "#0F7C8C" )
+		displayFolder: Colours
+		lineageTag: 3ca0b27f-ee4e-5a82-a1ae-3e0237222384
+
+	/// Pirelli-style colour for a compound rank.
+	measure 'Compound Colour' = SWITCH ( SELECTEDVALUE ( 'Tyre Compound'[Compound Rank] ), "SOFTEST", "#DA291C", "MIDDLE", "#F2B705", "HARDEST", "#9AA5B1", "WET", "#2E7DD7", "#C5CDD6" )
+		displayFolder: Colours
+		lineageTag: ad3edfcd-1c1f-5e2b-b59e-b203525d1fe8
+
+	measure 'Gate Colour' = IF ( SELECTEDVALUE ( 'Sanity Gate'[Passed] ), "#1B9E77", "#E4572E" )
+		displayFolder: Validation
+		lineageTag: 6c69d705-fb83-58a5-bac9-2ec147abca3f
+
+
+	column Placeholder
+		dataType: string
+		isHidden
+		lineageTag: 0825f228-1552-5576-b545-7e33b9acaa3b
+		summarizeBy: none
+		sourceColumn: Placeholder
+
+		annotation SummarizationSetBy = User
+
+	partition 'Key Measures' = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [Placeholder = text], {})
+				in
+				    Source
+
+	annotation PBI_ResultType = Table

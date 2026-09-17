@@ -1,0 +1,68 @@
+/// V6: the same cars costed from real finishing times and from simulated replays.
+table 'Strategy Backtest'
+	lineageTag: ba526c4d-342d-5dc5-b840-fae8bcf3a851
+
+	column 'Strategy Cost'
+		dataType: string
+		lineageTag: bebf636a-4122-5e53-80b2-9fd10968cde1
+		summarizeBy: none
+		sourceColumn: strategy_cost
+
+		annotation SummarizationSetBy = User
+
+	column Source
+		dataType: string
+		lineageTag: 93558a8d-072f-5ed7-b4eb-29630568f2b9
+		summarizeBy: none
+		sourceColumn: source
+
+		annotation SummarizationSetBy = User
+
+	column 'Estimate (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: f480f172-f28a-5b3c-b915-81b4d3facb89
+		summarizeBy: none
+		sourceColumn: estimate_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Lower 95% (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: 52dc6236-cd94-5ea9-80e9-1f58a3b2d598
+		summarizeBy: none
+		sourceColumn: ci_lo_s
+
+		annotation SummarizationSetBy = User
+
+	column 'Upper 95% (s)'
+		dataType: double
+		formatString: 0.0
+		lineageTag: ed8a2fb1-07f7-5a75-853b-2d0298bb1756
+		summarizeBy: none
+		sourceColumn: ci_hi_s
+
+		annotation SummarizationSetBy = User
+
+	column Races
+		dataType: int64
+		formatString: 0
+		lineageTag: 445059a2-ddfd-5a49-aa10-4dc9985c4b55
+		summarizeBy: none
+		sourceColumn: races
+
+		annotation SummarizationSetBy = User
+
+	partition 'Strategy Backtest' = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(PitWallFile("strategy_backtest.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"strategy_cost", type text}, {"source", type text}, {"estimate_s", type number}, {"ci_lo_s", type number}, {"ci_hi_s", type number}, {"races", Int64.Type}}, "en-US")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table
