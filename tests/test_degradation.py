@@ -89,3 +89,42 @@ def test_too_few_rows_returns_nan_not_a_wrong_answer():
     beta, se, n, _ = _wls_multi(x, np.ones(5), np.ones(5))
     assert np.isnan(beta).all()
     assert n == 5
+
+
+def test_cluster_se_counts_races_not_laps():
+    """Laps copied within a race add no information; the clustered SE must see
+    that, while the naive SE shrinks as if they were new observations."""
+    from pitwall.models.degradation import _cluster_se_first
+
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(40, 1))
+    y = 0.05 * x[:, 0] + rng.normal(size=40)
+    groups = np.repeat(np.arange(8), 5)
+    beta = np.linalg.lstsq(x, y, rcond=None)[0]
+    se_once = _cluster_se_first(x, y, np.ones(40), beta, groups)
+
+    x10, y10, g10 = np.tile(x, (10, 1)), np.tile(y, 10), np.tile(groups, 10)
+    se_tenfold = _cluster_se_first(x10, y10, np.ones(400), beta, g10)
+    _, naive_once, _, _ = _wls_multi(x, y, np.ones(40))
+    _, naive_tenfold, _, _ = _wls_multi(x10, y10, np.ones(400))
+
+    assert abs(se_tenfold - se_once) / se_once < 0.01
+    assert naive_tenfold[0] < 0.4 * naive_once[0]
+
+
+def test_shrinkage_pulls_noisy_cells_hardest():
+    """A noisy cell moves towards its compound's mean; a precise one barely moves."""
+    from pitwall.models.degradation import shrink_slopes
+
+    t = pd.DataFrame(
+        {
+            "circuit": ["a", "b", "c", "d"],
+            "compound_rank_label": ["MIDDLE"] * 4,
+            "slope": [0.0004, 0.04, 0.05, 0.03],
+            "se": [0.03, 0.002, 0.002, 0.002],
+        }
+    )
+    out = shrink_slopes(t, "slope", "se", prior="rank")
+    moved = (out["slope_shrunk"] - out["slope"]).abs()
+    assert moved.iloc[0] > 10 * moved.iloc[1:].max()
+    assert out["slope_shrunk"].iloc[0] > 0.02

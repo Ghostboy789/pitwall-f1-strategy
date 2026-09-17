@@ -1,0 +1,52 @@
+{
+  "curvature": 0.0011970646614095784,
+  "units": "s per lap per (lap of tyre age)^2",
+  "fit_seasons": "2018-2023",
+  "n_fit_races_simulated": 30,
+  "target_moment": {
+    "beta_s_per_stop": 1.0777798485160806,
+    "ci_lo": -5.3502010795787225,
+    "ci_hi": 7.790296885395957,
+    "n_car_races": 1093,
+    "n_races": 73
+  },
+  "held_out_moment": {
+    "beta_s_per_stop": -3.107284898971742,
+    "ci_lo": -13.353600433809888,
+    "ci_hi": 7.816064559016358,
+    "n_car_races": 561,
+    "n_races": 35
+  },
+  "grid": [
+    [
+      0.0,
+      10.379233870525796
+    ],
+    [
+      0.0005,
+      6.119013733579647
+    ],
+    [
+      0.001,
+      2.396472858645944
+    ],
+    [
+      0.0015,
+      -0.9493655090690506
+    ],
+    [
+      0.002,
+      -4.518751938553739
+    ],
+    [
+      0.003,
+      -12.21436333183902
+    ],
+    [
+      0.004,
+      -20.637437225939106
+    ]
+  ],
+  "status": "ok",
+  "method": "Indirect inference. One global coefficient on (tyre age)^2, solved so the simulator reproduces what an extra pit stop actually cost teams, measured from finishing times with race fixed effects. Held-out lap times do not support the term, so it is a calibrated stint-length cost, not a measured tyre cliff. After this the sanity gate is no longer fully independent of the strategy layer and must not be reported as if it were."
+}

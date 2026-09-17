@@ -183,6 +183,34 @@ def _wls_multi(
     return beta, se, n, float(vif)
 
 
+def _cluster_se_first(
+    x: np.ndarray, y: np.ndarray, w: np.ndarray, beta: np.ndarray, groups: np.ndarray
+) -> float:
+    """Standard error of the first coefficient, clustered by ``groups``.
+
+    Laps from the same race share weather, track state and the same field, so
+    they are not independent draws. The ordinary SE treats 2,000 laps from
+    eight races as 2,000 observations and comes out several times too small;
+    this sandwich estimator treats them as eight.
+    """
+    ok = np.isfinite(y) & np.isfinite(w) & (w > 0) & np.isfinite(x).all(axis=1)
+    x, y, w, groups = x[ok], y[ok], w[ok], groups[ok]
+    if not np.isfinite(beta).all():
+        return float("nan")
+    n_groups = len(np.unique(groups))
+    if n_groups < 2:
+        return float("nan")
+    try:
+        bread = np.linalg.inv((x * w[:, None]).T @ x)
+    except np.linalg.LinAlgError:
+        return float("nan")
+    score = x * (w * (y - x @ beta))[:, None]
+    by_group = pd.DataFrame(score).groupby(groups).sum().to_numpy()
+    meat = by_group.T @ by_group
+    v = bread @ meat @ bread * n_groups / (n_groups - 1)
+    return float(np.sqrt(max(v[0, 0], 0.0)))
+
+
 def _slopes_by_cell(
     d: pd.DataFrame,
     weights: pd.Series | None,
@@ -207,6 +235,8 @@ def _slopes_by_cell(
             "method": method,
             "slope_s_per_lap": float(beta[0]),
             "slope_se": float(se[0]),
+            "slope_se_race_clustered": _cluster_se_first(x, y, w, beta, grp["race_id"].to_numpy()),
+            "n_races": int(grp["race_id"].nunique()),
             "tyre_age_vif": vif,
             "n_laps": int(n),
             "n_stints": int(grp["stint_id"].nunique()),
@@ -393,6 +423,54 @@ def ipcw_fit(pace: pd.DataFrame, stints: pd.DataFrame) -> tuple[pd.DataFrame, ob
     return _slopes_by_cell(d, d["w"], "ipcw", with_fuel=False), aft
 
 
+def shrink_slopes(
+    table: pd.DataFrame,
+    slope_col: str,
+    se_col: str,
+    prior: str = "rank",
+) -> pd.DataFrame:
+    """Empirical-Bayes partial pooling of cell slopes.
+
+    A cell estimated from a few races can land at 0.0004 s/lap - a tyre that
+    never wears - purely by noise, and an optimiser will find every such cell
+    and put every car on that compound. Each cell is pulled towards a prior in
+    proportion to how noisy it is: B = tau^2 / (tau^2 + se^2), with tau^2, the
+    real between-cell variance, estimated by method of moments.
+
+    ``prior="rank"``    the mean slope of that compound rank across circuits.
+    ``prior="circuit"`` the same circuit's other compounds (leave-one-out),
+                        plus the average gap between this rank and theirs -
+                        so Bahrain stays a high-wear circuit.
+    """
+    t = table.copy()
+    b = t[slope_col].astype(float)
+    se2 = t[se_col].astype(float) ** 2
+    ok = b.notna() & se2.notna()
+
+    if prior == "rank":
+        prec = (1.0 / se2).where(ok)
+        m = (b * prec).groupby(t["compound_rank_label"]).transform("sum") / prec.groupby(
+            t["compound_rank_label"]
+        ).transform("sum")
+    elif prior == "circuit":
+        rank_mean = b.where(ok).groupby(t["compound_rank_label"]).transform("mean")
+        resid = (b - rank_mean).where(ok)
+        s = resid.groupby(t["circuit"]).transform("sum")
+        c = resid.notna().groupby(t["circuit"]).transform("sum")
+        loo = (s - resid.fillna(0.0)) / (c - resid.notna().astype(int))
+        m = rank_mean + loo.where(np.isfinite(loo), 0.0)
+    else:
+        raise ValueError(f"unknown prior {prior!r}")
+
+    tau2 = max(float(((b - m) ** 2)[ok].mean() - se2[ok].mean()), 1e-8)
+    shrink = tau2 / (tau2 + se2)
+    t[f"{slope_col}_prior"] = m
+    t[f"{slope_col}_shrinkage"] = 1.0 - shrink
+    t[f"{slope_col}_shrunk"] = (m + shrink * (b - m)).where(ok, b)
+    t.attrs["tau2"] = tau2
+    return t
+
+
 def ordering_check(table: pd.DataFrame, slope_col: str) -> dict:
     """Does the estimator respect the physics it never saw?
 
@@ -443,8 +521,21 @@ def compare(pace: pd.DataFrame, stints: pd.DataFrame, save: bool = True) -> dict
             how="inner",
         )
         .merge(
-            corrected[key + ["slope_s_per_lap", "slope_se", "mean_weight"]].rename(
-                columns={"slope_s_per_lap": "slope_ipcw", "slope_se": "se_ipcw"}
+            corrected[
+                key
+                + [
+                    "slope_s_per_lap",
+                    "slope_se",
+                    "slope_se_race_clustered",
+                    "n_races",
+                    "mean_weight",
+                ]
+            ].rename(
+                columns={
+                    "slope_s_per_lap": "slope_ipcw",
+                    "slope_se": "se_ipcw",
+                    "slope_se_race_clustered": "se_ipcw_race_clustered",
+                }
             ),
             on=key,
             how="inner",
@@ -452,8 +543,16 @@ def compare(pace: pd.DataFrame, stints: pd.DataFrame, save: bool = True) -> dict
     )
     merged["delta_twoway_vs_naive"] = merged["slope_twoway"] - merged["slope_naive"]
     merged["delta_ipcw_vs_twoway"] = merged["slope_ipcw"] - merged["slope_twoway"]
-    # The column the simulator consumes.
     merged["slope_s_per_lap_ipcw"] = merged["slope_ipcw"]
+
+    # The column the simulator consumes: the censoring-corrected slope,
+    # partially pooled towards its compound's cross-circuit mean. Chosen by a
+    # rule fixed before the result: adopt only if it lowers held-out lap-time
+    # error under 5-fold cross-validation by race. It did (MSE -0.0035 s^2,
+    # 95% CI -0.0059 to -0.0014; cell slope RMSE 0.0306 -> 0.0283 s/lap).
+    pooled = shrink_slopes(merged, "slope_ipcw", "se_ipcw_race_clustered", prior="rank")
+    merged["slope_ipcw_shrinkage"] = pooled["slope_ipcw_shrinkage"]
+    merged["slope_s_per_lap_sim"] = pooled["slope_ipcw_shrunk"]
 
     summary = {
         "n_cells": len(merged),

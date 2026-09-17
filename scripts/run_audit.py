@@ -6,6 +6,9 @@ Sampling is by race, controlled by ``--races``, so a quick pass and a thorough
 one use the same code.
 
     python -m scripts.run_audit --races 40
+    python -m scripts.run_audit --races 0 --shard 0/2   # every race, half of them
+    python -m scripts.run_audit --races 0 --shard 1/2   # the other half, in parallel
+    python -m scripts.run_audit --merge 2               # combine and apply the gate
 
 Writes ``models_out/audit.parquet``, ``models_out/sanity_gate.json`` and the
 team and driver summaries. The dashboard reads the gate verdict from disk and
@@ -30,7 +33,9 @@ log = logging.getLogger("pitwall.run_audit")
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Counterfactual audit + sanity gate.")
-    ap.add_argument("--races", type=int, default=40, help="how many races to audit")
+    ap.add_argument("--races", type=int, default=40, help="how many races to audit; 0 for all")
+    ap.add_argument("--shard", default=None, help="k/n: audit only every n-th race, offset k")
+    ap.add_argument("--merge", type=int, default=0, help="combine n finished shards, apply gate")
     ap.add_argument("--n-sims", type=int, default=400)
     ap.add_argument("--top-k", type=int, default=6)
     ap.add_argument("--max-stops", type=int, default=2)
@@ -44,6 +49,14 @@ def main(argv: list[str] | None = None) -> int:
         datefmt="%H:%M:%S",
         stream=sys.stdout,
     )
+
+    if args.merge:
+        shards = [config.MODELS_OUT / f"audit_shard{k}.parquet" for k in range(args.merge)]
+        missing = [p.name for p in shards if not p.exists()]
+        if missing:
+            log.error("cannot merge, shards not finished: %s", ", ".join(missing))
+            return 1
+        return _finish(pd.concat([pd.read_parquet(p) for p in shards], ignore_index=True))
 
     art = pipeline.load_artifacts()
     laps = art["laps"]
@@ -80,6 +93,12 @@ def main(argv: list[str] | None = None) -> int:
                 break
         usable = picked
 
+    tag = ""
+    if args.shard:
+        k, n = (int(x) for x in args.shard.split("/"))
+        usable = sorted(usable)[k::n]
+        tag = f"_shard{k}"
+
     log.info("auditing %d races", len(usable))
     cfg = audit.AuditConfig(
         n_sims=args.n_sims, top_k=args.top_k, max_stops=args.max_stops, seed=args.seed
@@ -91,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     # session ending under it. Partial results are written after every race and
     # completed races are skipped on restart, so an interruption costs one race
     # rather than the run -- the same property ingestion has.
-    partial_path = config.MODELS_OUT / "audit_partial.parquet"
+    partial_path = config.MODELS_OUT / f"audit_partial{tag}.parquet"
     frames: list[pd.DataFrame] = []
     done: set[str] = set()
     if partial_path.exists() and not args.restart:
@@ -134,9 +153,18 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     a = pd.concat(frames, ignore_index=True)
-    a.to_parquet(config.MODELS_OUT / "audit.parquet", index=False)
+    if tag:
+        a.to_parquet(config.MODELS_OUT / f"audit{tag}.parquet", index=False)
+        partial_path.unlink(missing_ok=True)
+        log.info("shard done: %d car-races in %d races", len(a), a["race_id"].nunique())
+        return 0
     partial_path.unlink(missing_ok=True)
+    return _finish(a)
 
+
+def _finish(a: pd.DataFrame) -> int:
+    """Persist the audit, apply the pre-registered gate, and report it."""
+    a.to_parquet(config.MODELS_OUT / "audit.parquet", index=False)
     gate = audit.sanity_gate(a)
     (config.MODELS_OUT / "sanity_gate.json").write_text(json.dumps(gate, indent=2, default=float))
 
