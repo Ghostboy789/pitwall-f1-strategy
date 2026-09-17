@@ -6,7 +6,9 @@
 ![Python 3.11](https://img.shields.io/badge/python-3.11-15171a)
 ![Tests](https://img.shields.io/badge/tests-102%20passing-0e8a8c)
 
-By **Medhansh Shekhawat** · [LinkedIn](https://www.linkedin.com/in/medhansh-shekhawat) · [GitHub](https://github.com/Ghostboy789)
+**[Live dashboard →](https://pitwall-f1-strategy.onrender.com)** · by **Medhansh Shekhawat** · [LinkedIn](https://www.linkedin.com/in/medhansh-shekhawat) · [GitHub](https://github.com/Ghostboy789)
+
+<sub>Hosted on a free tier that sleeps when idle: the first visit can take about a minute to wake.</sub>
 
 ![Pit Wall overview dashboard](docs/overview-light.png)
 
