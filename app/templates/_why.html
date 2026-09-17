@@ -1,0 +1,20 @@
+{% set sv = strategy_validation %}
+<figure class="pane" style="margin:0">
+  <figcaption class="pane-head">
+    <h3>Cost of strategy: real races vs simulator</h3>
+    <span class="unit">within-race · 95% CI</span>
+  </figcaption>
+  <div class="legend" aria-hidden="true">
+    <span><i style="background:var(--real)"></i>Real races</span>
+    <span><i style="background:var(--sim)"></i>Simulator</span>
+  </div>
+  <div class="pane-body"><div id="why-stop" aria-hidden="true"></div></div>
+  <div class="pane-body split"><div id="why-balance" aria-hidden="true"></div></div>
+  <dl class="readout">
+    <div><dt>Extra stop, sim − real</dt><dd>{{ "%+.1f"|format(sv.simulated_minus_real.extra_stop_s.estimate) }} s</dd></div>
+    <div><dt>95% CI</dt><dd>{{ "%+.1f"|format(sv.simulated_minus_real.extra_stop_s.ci_lo) }} to {{ "%+.1f"|format(sv.simulated_minus_real.extra_stop_s.ci_hi) }}</dd></div>
+    <div><dt>Stint split, sim − real</dt><dd>{{ "%+.0f"|format(sv.simulated_minus_real.stint_balance_s.estimate) }} s</dd></div>
+    <div><dt>95% CI</dt><dd>{{ "%+.0f"|format(sv.simulated_minus_real.stint_balance_s.ci_lo) }} to {{ "%+.0f"|format(sv.simulated_minus_real.stint_balance_s.ci_hi) }}</dd></div>
+  </dl>
+  <div class="pane-foot"><p>Stint split is the finishing-time cost per unit of longest-stint share, among cars with the same number of stops. Forced stops (lap-1 damage, punctures, late stops) are excluded on both sides. Intervals resample whole races, jointly for the difference.</p></div>
+</figure>

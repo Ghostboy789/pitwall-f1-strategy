@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Pit Wall{% endblock %} · {{ author.name }}</title>
+<meta name="description" content="{% block description %}An F1 race-strategy model built from {{ metrics.n_races }} races by {{ author.name }}, with honest intervals and a pre-registered validation that caught its own failure.{% endblock %}">
+<meta name="author" content="{{ author.name }}">
+<meta property="og:title" content="Pit Wall · an F1 strategy model, tested until it failed">
+<meta property="og:description" content="What a place on track is worth per circuit, and the validation that found where the strategy model breaks. By {{ author.name }}.">
+<meta name="color-scheme" content="light dark">
+<script>try{var t=localStorage.getItem("pitwall-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="theme-color" content="#f4f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1012" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Chivo+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/pitwall.css?v={{ asset_version }}">
+</head>
+<body data-page="{{ active }}">
+<!--
+THESIS: A race-engineering debrief, not a dashboard. Channels on shared axes, one cursor, every value against its limit, read top to bottom like reviewing a stint. Refuses the KPI-tile grid and the filter-sidebar F1 dashboard.
+OWN-WORLD: White analysis workspace on a warm grey ground; hairline panes; teal finding, blue simulator, graphite real races, amber limit, red breach only; condensed uppercase channel labels in Archivo, every number in Chivo Mono tabular.
+STORY: In five seconds a recruiter sees who built it and what it found; scrolling, a technical reader sees how it was tested and exactly where it fails; four more dashboards let anyone dig in or run a race.
+FIRST VIEWPORT: Left, the finding as a headline, plain-English line, facts, two actions. Right, the track-position channel: circuits ranked, 95% band, cursor sweeping once then under the pointer, readout rail beneath. Author and links in the header strip.
+FORM: Telemetry workspace, candidate 3 of 7, seed 70e54fc1.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+<a class="skip" href="#main">Skip to content</a>
+<div id="tip" role="presentation"></div>
+
+<header class="strip">
+  <div class="strip-in">
+    <a class="mark" href="/">Pit <span>Wall</span></a>
+    <nav class="nav" aria-label="Dashboards">
+      {% for key, href, label in [("overview", "/", "Overview"), ("circuits", "/circuits", "Circuits"), ("tyres", "/tyres", "Tyres"), ("validation", "/validation", "Validation"), ("simulator", "/simulator", "Simulator")] %}
+      <a href="{{ href }}"{% if active == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="right">
+    <div class="who">
+      <strong>{{ author.name }}</strong>
+      <span class="links">
+        <a href="{{ author.github }}" rel="noopener">GitHub</a>
+        <a href="{{ author.linkedin }}" rel="noopener">LinkedIn</a>
+        <a href="mailto:{{ author.email }}">Email</a>
+      </span>
+    </div>
+    <div class="theme" role="radiogroup" aria-label="Colour theme">
+      <button type="button" role="radio" aria-checked="true" data-theme-choice="system" title="Match system theme" aria-label="Match system theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.75" y="2.5" width="12.5" height="8.5" rx="1.5"/><path d="M5.5 14h5M8 11v3"/></svg></button>
+      <button type="button" role="radio" aria-checked="false" data-theme-choice="light" title="Light theme" aria-label="Light theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg></button>
+      <button type="button" role="radio" aria-checked="false" data-theme-choice="dark" title="Dark theme" aria-label="Dark theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 9.6A5.75 5.75 0 0 1 6.4 2.5a5.75 5.75 0 1 0 7.1 7.1Z"/></svg></button>
+    </div>
+    </div>
+  </div>
+  <div class="lap" aria-hidden="true"></div>
+</header>
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="foot-in">
+    <div class="close">
+      <div>
+        <h2>What this does not establish.</h2>
+        <ul>
+          <li>Adjacent circuits are not separable; only the extremes are.</li>
+          <li>The per-team and per-driver strategy audit is withheld, because the model failed its own gate.</li>
+          <li>Fuel burn and track evolution can't be separated in race data; they are reported combined.</li>
+          <li>Per-circuit compound wear is noisy: its held-out error is about the size of the effect.</li>
+          <li>Wet races and races stopped early are excluded, by rules written before any result.</li>
+        </ul>
+      </div>
+      <div class="sign">
+        <p class="name">{{ author.name }}</p>
+        <p>Built from FastF1 timing data for {{ metrics.n_races }} races, 2018–2026. Every model, the validation plan written before any result, and every failure are in the repository. {{ metrics.gates_passed }} of {{ metrics.gates_total }} data-quality gates pass.</p>
+        <div class="links">
+          <a class="btn" href="{{ author.repo }}" rel="noopener">Code &amp; methodology</a>
+          <a class="btn line" href="{{ author.linkedin }}" rel="noopener">LinkedIn</a>
+          <a class="btn line" href="{{ author.github }}" rel="noopener">GitHub</a>
+          <a class="btn line" href="mailto:{{ author.email }}">Email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="fine">Pit Wall is an independent analysis of public timing data and is not affiliated with Formula 1, the FIA or any team.</p>
+</footer>
+
+<script id="data" type="application/json">{% block data %}{}{% endblock %}</script>
+<script src="/static/pitwall.js?v={{ asset_version }}"></script>
+</body>
+</html>

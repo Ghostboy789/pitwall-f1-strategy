@@ -31,6 +31,14 @@ DEFAULT_PIT_LOSS_S = 23.0
 DEFAULT_HAZARD = 0.02
 
 
+def save_quality_artifacts(gates: pd.DataFrame, exclusions: pd.DataFrame) -> None:
+    """Persist the data-quality gates and the race exclusion list for the app."""
+    gates.to_csv(config.MODELS_OUT / "data_quality_gates.csv", index=False)
+    cols = ["race_id", "year", "event_name", "exclusion_reason", "wet_lap_share"]
+    ex = exclusions.loc[exclusions["excluded"], [c for c in cols if c in exclusions.columns]]
+    ex.to_csv(config.MODELS_OUT / "race_exclusions.csv", index=False)
+
+
 def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dict:
     """Run every stage in order and return the artefacts."""
     t0 = time.time()
@@ -49,6 +57,8 @@ def build_all(n_boot: int = trackposition.N_BOOTSTRAP, save: bool = True) -> dic
     counts = quality.sample_counts(laps)
     filt = quality.filter_report(pace_laps)
     out.update(gates=gates, exclusions=exclusions, sample_counts=counts, filter_report=filt)
+    if save:
+        save_quality_artifacts(gates, exclusions)
 
     # Strategy modelling uses only races that passed the pre-registered rules;
     # the caution hazard deliberately uses all of them (see VALIDATION_PLAN).

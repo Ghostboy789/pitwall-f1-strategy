@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Circuits · Pit Wall{% endblock %}
+{% block description %}Every F1 circuit measured from {{ metrics.n_races }} races: what track position is worth, pass rate, pit loss, safety cars and tyre wear, each with its uncertainty.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-circ">
+  <div class="claim">
+    <h1 id="h-circ">Every circuit, measured against the field.</h1>
+    <p class="plain">Pick a circuit, or two to compare. Each channel places it among all {{ profiles|length }} circuits, with its uncertainty where the model has one.</p>
+  </div>
+  <div class="pick">
+    <div class="field">
+      <label for="c-a">Circuit</label>
+      <select id="c-a">
+        {% for p in profiles|sort(attribute='name') %}<option value="{{ p.key }}"{% if p.key == 'monaco' %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="c-b">Compare with</label>
+      <select id="c-b">
+        <option value="">Nothing</option>
+        {% for p in profiles|sort(attribute='name') %}<option value="{{ p.key }}"{% if p.key == 'monza' %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="key" aria-hidden="true">
+      <span><i class="dot" style="background:var(--finding)"></i><b id="k-a">–</b></span>
+      <span id="k-b-wrap"><i class="dot" style="background:var(--sim)"></i><b id="k-b">–</b></span>
+      <span><i class="dot" style="background:var(--other)"></i>other circuits</span>
+    </div>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Circuit channels">
+  <figure class="pane" style="margin:0">
+    <figcaption class="pane-head">
+      <h3>Channels</h3>
+      <span class="unit">point at a channel to read every circuit</span>
+    </figcaption>
+    <div id="channels" class="channels"></div>
+  </figure>
+
+  <figure class="pane" style="margin:16px 0 0">
+    <figcaption class="pane-head">
+      <h3>Tyre wear by compound</h3>
+      <span class="unit">pooled s/lap used by the simulator · race-clustered 95% CI · longest plausible stint</span>
+    </figcaption>
+    <div class="pane-body"><div id="c-tyres" aria-hidden="true"></div></div>
+    <div class="pane-foot"><p>Compounds are ranked within each event (the softest tyre brought that weekend, and so on), because the same label means different rubber at different races. Wear intervals are wide; see <a href="/tyres">Tyres</a> for why.</p></div>
+  </figure>
+</section>
+
+<section class="run wide" aria-labelledby="h-table">
+  <div class="table-head">
+    <h2 id="h-table">All circuits</h2>
+    <p class="aside">Select a row to load it above. Column headers sort.</p>
+  </div>
+  <div class="pane scroll-x">
+    <table class="est sortable" id="c-table">
+      <thead>
+        <tr>
+          <th data-k="name" aria-sort="none"><button type="button">Circuit</button></th>
+          <th class="n" data-k="races" aria-sort="none"><button type="button">Races</button></th>
+          <th class="n" data-k="value_s" aria-sort="descending"><button type="button">Track position (s)</button></th>
+          <th class="n" data-k="pass_per_lap" aria-sort="none"><button type="button">Pass / lap</button></th>
+          <th class="n" data-k="passes_per_race" aria-sort="none"><button type="button">Passes / race</button></th>
+          <th class="n" data-k="pit_loss_s" aria-sort="none"><button type="button">Pit loss (s)</button></th>
+          <th class="n" data-k="cautions_per_race" aria-sort="none"><button type="button">Cautions / race</button></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block data %}{{ {"profiles": profiles}|tojson }}{% endblock %}

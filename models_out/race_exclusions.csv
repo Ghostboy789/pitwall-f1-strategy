@@ -1,0 +1,24 @@
+race_id,year,event_name,exclusion_reason,wet_lap_share
+2019_11,2019,German Grand Prix,E5_wet_race,0.7195467422096318
+2020_09,2020,Tuscan Grand Prix,E3_early_red_flag,0.0
+2020_14,2020,Turkish Grand Prix,E5_wet_race,1.0
+2020_15,2020,Bahrain Grand Prix,E3_early_red_flag,0.0
+2021_02,2021,Emilia Romagna Grand Prix,E5_wet_race,0.4418811002661934
+2021_10,2021,British Grand Prix,E3_early_red_flag,0.0
+2021_11,2021,Hungarian Grand Prix,E3_early_red_flag,0.05177664974619289
+2021_12,2021,Belgian Grand Prix,E1_too_few_green_laps,0.0
+2021_16,2021,Turkish Grand Prix,E5_wet_race,0.999128160418483
+2022_07,2022,Monaco Grand Prix,E5_wet_race,0.3375742154368109
+2022_10,2022,British Grand Prix,E3_early_red_flag,0.0
+2022_17,2022,Singapore Grand Prix,E5_wet_race,0.6222222222222222
+2022_18,2022,Japanese Grand Prix,E3_early_red_flag|E5_wet_race,1.0
+2023_03,2023,Australian Grand Prix,E3_early_red_flag,0.0
+2023_20,2023,São Paulo Grand Prix,E3_early_red_flag,0.0
+2024_04,2024,Japanese Grand Prix,E3_early_red_flag,0.0
+2024_08,2024,Monaco Grand Prix,E3_early_red_flag,0.0
+2024_09,2024,Canadian Grand Prix,E5_wet_race,0.6650943396226415
+2024_21,2024,São Paulo Grand Prix,E5_wet_race,1.0
+2025_01,2025,Australian Grand Prix,E5_wet_race,0.8090614886731392
+2025_12,2025,British Grand Prix,E5_wet_race,0.7360774818401937
+2026_12,2026,Dutch Grand Prix,E3_early_red_flag,0.0
+2026_13,2026,Italian Grand Prix,E3_early_red_flag,0.0

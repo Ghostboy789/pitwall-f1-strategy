@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Tyres · Pit Wall{% endblock %}
+{% block description %}Tyre degradation for every F1 circuit and compound under three estimators, with race-clustered intervals and partial pooling.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-ty">
+  <div class="claim">
+    <h1 id="h-ty">Tyre wear, circuit by circuit, under every estimator.</h1>
+    <p class="plain">Switch between the estimators and watch the data change its mind. Only the corrected ones put the softest tyre as the fastest to wear at most circuits, and they were never told that it should.</p>
+  </div>
+  <div class="claim">
+    <p>The naive estimator compares a car with itself across a race, so it confuses tyre wear with the conditions each compound was chosen for. Two-way fixed effects compare cars at the same moment of the same race. The censoring correction then re-weights for stints cut short because the tyre was finished.</p>
+    <p>The simulator uses the corrected slope pulled toward its compound's average across circuits, by an amount set by how noisy the circuit's own estimate is. That pooling was adopted only because it lowered prediction error on races held out from fitting.</p>
+    {% if selection and selection.status == 'ok' %}
+    <p class="aside">Selection is measured: a stint's wear over its first five laps predicts how soon it was pitted, r = {{ "%.3f"|format(selection.pearson_r) }} across {{ "{:,}".format(selection.n_stints|int) }} stints.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="run wide" aria-label="Tyre wear chart">
+  <figure class="pane" style="margin:0">
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Estimator" id="est-seg">
+        <button type="button" role="radio" aria-checked="false" data-est="naive">Naive</button>
+        <button type="button" role="radio" aria-checked="false" data-est="twoway">Two-way FE</button>
+        <button type="button" role="radio" aria-checked="false" data-est="ipcw">+ Censoring</button>
+        <button type="button" role="radio" aria-checked="true" data-est="sim">Pooled (simulator)</button>
+      </div>
+      <div class="field">
+        <label for="est-sort">Sort circuits by</label>
+        <select id="est-sort">
+          <option value="soft">Softest tyre wear</option>
+          <option value="spread">Soft minus hard</option>
+          <option value="name">Name</option>
+        </select>
+      </div>
+      <div class="legend" aria-hidden="true" style="padding:0;margin-left:auto">
+        <span><i class="dot" style="background:var(--soft)"></i>Softest</span>
+        <span><i class="dot" style="background:var(--middle)"></i>Middle</span>
+        <span><i class="dot" style="background:var(--hard);border:1px solid var(--hard-stroke)"></i>Hardest</span>
+      </div>
+    </div>
+    <dl class="readout" aria-live="polite">
+      <div><dt>Soft wears fastest</dt><dd id="o-order">–</dd></div>
+      <div><dt>Impossible cells</dt><dd id="o-neg">–</dd></div>
+      <div><dt>Median softest</dt><dd id="o-soft">–</dd></div>
+      <div><dt>Median hardest</dt><dd id="o-hard">–</dd></div>
+    </dl>
+    <div class="pane-body"><div id="ty-chart" aria-hidden="true"></div></div>
+    <div class="pane-foot"><p>Seconds lost per lap of tyre age. Whiskers are 95% intervals clustered by race, shown for the corrected and pooled estimators. Red markers are impossible cells: a tyre getting quicker as it ages.</p></div>
+  </figure>
+</section>
+{% endblock %}
+
+{% block data %}{{ {"deg": degradation}|tojson }}{% endblock %}

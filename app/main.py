@@ -14,8 +14,10 @@ Fly, Railway, Koyeb or Hugging Face Spaces without modification.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -35,9 +37,30 @@ from pitwall.sim import Car, Strategy, simulate
 log = logging.getLogger("pitwall.app")
 
 APP_DIR = Path(__file__).resolve().parent
-app = FastAPI(title="Pit Wall", docs_url="/api/docs")
+
+AUTHOR = {
+    "name": "Medhansh Shekhawat",
+    "github": "https://github.com/Ghostboy789",
+    "repo": "https://github.com/Ghostboy789/pitwall-f1-strategy",
+    "linkedin": "https://www.linkedin.com/in/medhansh-shekhawat",
+    "email": "medhanshshekhawat@gmail.com",
+}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    load_state()
+    yield
+
+
+app = FastAPI(title="Pit Wall", docs_url="/api/docs", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
+# Content hash on asset URLs, so a redeploy is never hidden behind a cached
+# stylesheet or script from the previous version.
+templates.env.globals["asset_version"] = hashlib.sha256(
+    b"".join((APP_DIR / "static" / n).read_bytes() for n in ("pitwall.css", "pitwall.js"))
+).hexdigest()[:10]
 
 STATE: dict[str, Any] = {}
 
@@ -46,13 +69,23 @@ STATE: dict[str, Any] = {}
 # bottom of the table, which is usually the one with the least evidence.
 HEADLINE_MIN_RACES = 5
 
+GATE_LABELS = {
+    "non_empty": "The lap table has rows",
+    "lap_number_monotonic": "Lap numbers increase within every car's race",
+    "stint_non_decreasing": "Stint numbers never go backwards",
+    "tyre_age_increments": "Tyre age advances by one lap within a stint",
+    "fresh_tyre_starts_at_age_1": "A new set of tyres starts at age 1",
+    "lap_time_in_bounds": "Every lap time is between 50 s and 400 s",
+    "circuit_keys_known": "Every circuit maps to a known track layout",
+    "no_duplicate_car_laps": "One row per car per lap",
+}
+
 
 def _pretty(circuit: str) -> str:
     ref = CIRCUIT_REF.get(circuit)
     return ref.name if ref else circuit.replace("_", " ").title()
 
 
-@app.on_event("startup")
 def load_state() -> None:
     """Read every fitted artefact into memory once."""
     from pitwall import pipeline
@@ -111,10 +144,10 @@ def load_state() -> None:
         STATE["headline"] = None
 
     rel_path = config.MODELS_OUT / "overtaking_reliability.csv"
-    STATE["reliability"] = pd.read_csv(rel_path).to_dict("records") if rel_path.exists() else []
+    STATE["reliability"] = _records(pd.read_csv(rel_path)) if rel_path.exists() else []
 
     sel_path = config.MODELS_OUT / "selection_evidence.csv"
-    STATE["selection"] = pd.read_csv(sel_path).to_dict("records")[0] if sel_path.exists() else None
+    STATE["selection"] = _records(pd.read_csv(sel_path))[0] if sel_path.exists() else None
 
     # The sanity gate is optional: the dashboard is honest about not having run
     # it rather than showing a blank where a verdict should be.
@@ -126,13 +159,139 @@ def load_state() -> None:
         g = json.loads(gate_path.read_text())
         STATE["gate"] = g if g.get("status") == "ok" else None
 
+    # The gate's evidence, as distributions only. Per-team and per-driver
+    # numbers stay withheld: the audit failed its own check.
+    audit_path = config.MODELS_OUT / "audit.parquet"
+    STATE["gate_evidence"] = None
+    if STATE["gate"] and audit_path.exists():
+        a = pd.read_parquet(audit_path)
+        best_stops = a["best_strategy"].astype(str).str.count(r"L\d+")
+        extra = (a["actual_n_stops"] - best_stops).clip(lower=0, upper=3)
+        edges = list(range(0, 105, 5))
+        counts, _ = np.histogram(a["gain_s"].clip(upper=edges[-1] - 1e-9), bins=edges)
+        STATE["gate_evidence"] = {
+            "bin_edges": edges,
+            "counts": counts.tolist(),
+            "by_extra_stops": [
+                {
+                    "extra": int(k),
+                    "n": len(g),
+                    "mean": float(g.mean()),
+                    "median": float(g.median()),
+                }
+                for k, g in a["gain_s"].groupby(extra)
+            ],
+        }
+
+    sv_path = config.MODELS_OUT / "strategy_validation.json"
+    STATE["strategy_validation"] = json.loads(sv_path.read_text()) if sv_path.exists() else None
+
     STATE["circuits"] = sorted(set(tp["circuit"]) & set(art["circuit_reference"]["circuit"]))
+    STATE["circuit_profiles"] = _circuit_profiles(art, tp, deg)
+    STATE["quality_gates"] = _read_csv("data_quality_gates.csv")
+    STATE["exclusions"] = _read_csv("race_exclusions.csv")
+    STATE["detector"] = _read_csv("detector_sanity.csv")
+    fuel = _read_csv("fuel_scaling_check.csv")
+    STATE["fuel_check"] = fuel[0] if fuel else None
     log.info(
         "loaded artefacts: %d circuits, reliability=%d bins, gate=%s",
         len(STATE["circuits"]),
         len(STATE["reliability"]),
         "yes" if STATE["gate"] else "no",
     )
+
+
+def _records(df: pd.DataFrame) -> list[dict]:
+    """Rows as dicts with NaN as None, so they serialise as valid JSON."""
+    return df.astype(object).where(df.notna(), None).to_dict("records")
+
+
+def _read_csv(name: str) -> list[dict]:
+    path = config.MODELS_OUT / name
+    return _records(pd.read_csv(path)) if path.exists() else []
+
+
+def _num(v) -> float | None:
+    return None if v is None or pd.isna(v) else float(v)
+
+
+def _circuit_profiles(art: dict, tp: pd.DataFrame, deg: pd.DataFrame) -> list[dict]:
+    """Everything the model knows about each circuit, with its uncertainty.
+
+    Assembled once at startup so the circuit dashboard can switch and compare
+    without a round trip. Only fitted artefacts are read.
+    """
+    ref = art["circuit_reference"].set_index("circuit")
+    pit = art["pit_loss"].set_index("circuit")
+    haz = art["hazard"].set_index("circuit")
+    tpi = tp.set_index("circuit")
+    detector = pd.DataFrame(_read_csv("detector_sanity.csv"))
+    det = detector.set_index("circuit") if len(detector) else pd.DataFrame()
+    limits = art.get("stint_limits")
+
+    out = []
+    for c in STATE["circuits"]:
+        t = tpi.loc[c]
+        compounds = []
+        for label in ("SOFTEST", "MIDDLE", "HARDEST"):
+            row = deg[(deg["circuit"] == c) & (deg["compound_rank_label"] == label)]
+            lim = (
+                limits[(limits["circuit"] == c) & (limits["compound_rank_label"] == label)]
+                if limits is not None
+                else pd.DataFrame()
+            )
+            if not len(row):
+                compounds.append({"rank": label, "estimated": False})
+                continue
+            r = row.iloc[0]
+            compounds.append(
+                {
+                    "rank": label,
+                    "estimated": True,
+                    "sim": _num(r["slope_s_per_lap_sim"]),
+                    "ipcw": _num(r["slope_ipcw"]),
+                    "se": _num(r["se_ipcw_race_clustered"]),
+                    "naive": _num(r["slope_naive"]),
+                    "n_stints": int(r["n_stints"]),
+                    "max_stint": int(lim["max_stint"].iloc[0]) if len(lim) else None,
+                }
+            )
+        out.append(
+            {
+                "key": c,
+                "name": _pretty(c),
+                "races": int(t["n_races"]),
+                "race_laps": _num(ref["race_laps"].get(c)),
+                "median_lap_s": _num(ref["median_lap_s"].get(c)),
+                "value_s": _num(t["value_s"]),
+                "value_lo": _num(t["value_lo"]),
+                "value_hi": _num(t["value_hi"]),
+                "pass_per_lap": _num(t["p_pass_per_lap"]),
+                "focus": bool(t["is_focus"]),
+                "pit_loss_s": _num(pit["pit_loss_shrunk"].get(c)),
+                "pit_loss_se": _num(pit["pit_loss_shrunk_se"].get(c)),
+                "cautions_per_race": _num(haz["expected_cautions_per_race"].get(c)),
+                "hazard": _num(haz["hazard_shrunk"].get(c)),
+                "hazard_se": _num(haz["hazard_shrunk_se"].get(c)),
+                "passes_per_race": _num(det["mean_passes_per_race"].get(c)) if len(det) else None,
+                "compounds": compounds,
+            }
+        )
+    return out
+
+
+def _page(request: Request, name: str, active: str, **extra):
+    """Render a page with the context every page shares."""
+    if not STATE.get("ready"):
+        return templates.TemplateResponse(request, "not_ready.html", {}, status_code=503)
+    ctx = {
+        "active": active,
+        "author": AUTHOR,
+        "metrics": STATE["metrics"],
+        "gate": STATE["gate"],
+    }
+    ctx.update(extra)
+    return templates.TemplateResponse(request, name, ctx)
 
 
 def _require_ready() -> None:
@@ -151,37 +310,85 @@ def health() -> dict:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     if not STATE.get("ready"):
-        return templates.TemplateResponse(request, "not_ready.html", {}, status_code=503)
-    tp = STATE["trackposition"]
-    focus = tp[tp["is_focus"]].sort_values("value_s", ascending=False)
-    return templates.TemplateResponse(
+        return _page(request, "", "")
+    return _page(
         request,
         "index.html",
-        {
-            "metrics": STATE["metrics"],
-            "trackposition": tp.to_dict("records"),
-            "focus": focus.to_dict("records"),
-            "degradation": STATE["degradation"].to_dict("records"),
-            "reliability": STATE["reliability"],
-            "gate": STATE["gate"],
-            "headline": STATE["headline"],
-            "deg_ordering": STATE["deg_ordering"],
-            "selection": STATE["selection"],
-            "circuits": [{"key": c, "name": _pretty(c)} for c in STATE["circuits"]],
-        },
+        "overview",
+        trackposition=_records(STATE["trackposition"]),
+        degradation=_records(STATE["degradation"]),
+        reliability=STATE["reliability"],
+        headline=STATE["headline"],
+        deg_ordering=STATE["deg_ordering"],
+        selection=STATE["selection"],
+        strategy_validation=STATE["strategy_validation"],
+        gate_evidence=STATE["gate_evidence"],
+    )
+
+
+@app.get("/circuits", response_class=HTMLResponse)
+def circuits_page(request: Request):
+    if not STATE.get("ready"):
+        return _page(request, "", "")
+    return _page(request, "circuits.html", "circuits", profiles=STATE["circuit_profiles"])
+
+
+@app.get("/tyres", response_class=HTMLResponse)
+def tyres_page(request: Request):
+    if not STATE.get("ready"):
+        return _page(request, "", "")
+    return _page(
+        request,
+        "tyres.html",
+        "tyres",
+        degradation=_records(STATE["degradation"]),
+        deg_ordering=STATE["deg_ordering"],
+        selection=STATE["selection"],
+    )
+
+
+@app.get("/validation", response_class=HTMLResponse)
+def validation_page(request: Request):
+    if not STATE.get("ready"):
+        return _page(request, "", "")
+    return _page(
+        request,
+        "validation.html",
+        "validation",
+        reliability=STATE["reliability"],
+        strategy_validation=STATE["strategy_validation"],
+        gate_evidence=STATE["gate_evidence"],
+        quality_gates=STATE["quality_gates"],
+        gate_labels=GATE_LABELS,
+        exclusions=STATE["exclusions"],
+        detector=STATE["detector"],
+        fuel_check=STATE["fuel_check"],
+        selection=STATE["selection"],
+    )
+
+
+@app.get("/simulator", response_class=HTMLResponse)
+def simulator_page(request: Request):
+    if not STATE.get("ready"):
+        return _page(request, "", "")
+    return _page(
+        request,
+        "simulator.html",
+        "simulator",
+        circuits=[{"key": c, "name": _pretty(c)} for c in STATE["circuits"]],
     )
 
 
 @app.get("/api/track-position")
 def api_track_position() -> JSONResponse:
     _require_ready()
-    return JSONResponse(STATE["trackposition"].to_dict("records"))
+    return JSONResponse(_records(STATE["trackposition"]))
 
 
 @app.get("/api/degradation")
 def api_degradation() -> JSONResponse:
     _require_ready()
-    return JSONResponse(STATE["degradation"].to_dict("records"))
+    return JSONResponse(_records(STATE["degradation"]))
 
 
 @app.get("/api/circuit/{circuit}")

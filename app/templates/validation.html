@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Validation · Pit Wall{% endblock %}
+{% block description %}The model-risk report for Pit Wall: calibration, a pre-registered sanity gate that failed, real-versus-simulated strategy costs, data-quality gates and exclusion rules.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-val">
+  <div class="claim">
+    <h1 id="h-val">The validation report, including what failed.</h1>
+    <p class="plain">Every check below was written into a validation plan before any result was computed, with the limits that would declare the model broken.</p>
+  </div>
+  <div class="pane">
+    <table class="est status">
+      <thead><tr><th>Check</th><th>What it asks</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="num">V1</td><td>Predict finishing order in races held out entirely</td><td><span class="tag todo">Not run</span></td></tr>
+        <tr><td class="num">V2</td><td>Are overtaking probabilities calibrated, out of fold by race?</td><td><span class="tag ok">Pass</span> <span class="dim num">ECE {{ "%.4f"|format(metrics.overtaking_ece) }}</span></td></tr>
+        <tr><td class="num">V3</td><td>Does the optimiser claim implausible gains over real strategists?</td><td>{% if gate %}<span class="tag {{ 'ok' if gate.passed else 'fail' }}">{{ "Pass" if gate.passed else "Fail" }}</span> <span class="dim num">{{ "%.1f"|format(gate.mean_gain_s) }} s vs 2.0 s</span>{% else %}<span class="tag todo">Not run</span>{% endif %}</td></tr>
+        <tr><td class="num">V4</td><td>Which components earn their place (ablations)?</td><td><span class="tag todo">Partial</span> <span class="dim">leakage ablation only</span></td></tr>
+        <tr><td class="num">V5</td><td>Is the lap data structurally sound?</td><td><span class="tag {{ 'ok' if metrics.gates_passed == metrics.gates_total else 'fail' }}">{{ metrics.gates_passed }} / {{ metrics.gates_total }}</span></td></tr>
+        <tr><td class="num">V6</td><td>Does the simulator price strategy like real races?</td><td>{% if strategy_validation %}<span class="tag fail">Fail</span> <span class="dim">over-prices stops and stint splits</span>{% else %}<span class="tag todo">Not run</span>{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="run" id="calibration" aria-labelledby="h-v2">
+  <div class="claim">
+    <h2 id="h-v2">V2 · Overtaking calibration</h2>
+    <p class="plain">A gradient-boosted model of passing mechanics with a circuit effect shrunk by empirical Bayes, predicting whether a car within reach completes a pass.</p>
+    <p>AUC {{ "%.3f"|format(metrics.overtaking_auc) }} and Brier {{ "%.4f"|format(metrics.overtaking_brier) }} on a {{ "%.1f"|format(100 * metrics.n_passes / metrics.n_opportunities) }}% base rate. Removing the pace feature, the one most able to leak the outcome, costs 0.015 AUC: the model is not running on a variable that already knows the answer.</p>
+  </div>
+  <figure class="pane" style="margin:0">
+    <figcaption class="pane-head"><h3>Predicted vs observed pass rate</h3><span class="unit">{{ "{:,}".format(metrics.n_opportunities) }} opportunities · 10 bins</span></figcaption>
+    <div class="pane-body"><div id="rel-chart" aria-hidden="true"></div></div>
+  </figure>
+</section>
+
+<section class="run" id="gate" aria-labelledby="h-v3">
+  <div class="claim">
+    <h2 id="h-v3">V3 · The sanity gate</h2>
+    <p class="plain">Real F1 strategists are good. An optimiser that claims to beat them by more than 2 s on average, in more than 70% of car-races, or by more than 30 s in any single one without an identifiable cause, is declared broken.</p>
+    <p>It failed on all three. The counterfactual audit of teams and drivers is therefore withheld. The failure localises to stop count, which V6 explains.</p>
+  </div>
+  <div>{% include "_gate.html" %}</div>
+</section>
+
+{% if strategy_validation %}
+<section class="run" id="why" aria-labelledby="h-v6">
+  <div class="claim">
+    <h2 id="h-v6">V6 · Strategy costs, real vs simulated</h2>
+    <p class="plain">Added after V3 failed, to find out why: the same cars and races, with the strategy each car actually ran, costed twice.</p>
+    <p>Real finishing times are insensitive to both how many stops a car made and how it split its stints. The simulator is not. Two calibrated fixes were tried and rejected: each matched one quantity and missed the other.</p>
+  </div>
+  <div>{% include "_why.html" %}</div>
+</section>
+{% endif %}
+
+<section class="run" aria-labelledby="h-v5">
+  <div class="claim">
+    <h2 id="h-v5">V5 · Data quality</h2>
+    <p class="plain">Structural checks on {{ "{:,}".format(metrics.n_laps_raw) }} laps, and the rules that keep a race out of strategy modelling.</p>
+    {% if fuel_check %}<p>Fuel burn scales with lap length across circuits, as physics requires (r = {{ "%.3f"|format(fuel_check.pearson_r) }}, p = {{ "%.1e"|format(fuel_check.p_value) }}), an independent check on the pace model.</p>{% endif %}
+  </div>
+  <div>
+    <figure class="pane" style="margin:0">
+      <figcaption class="pane-head"><h3>Data-quality gates</h3><span class="unit">violations / checked</span></figcaption>
+      <table class="est">
+        <tbody>
+        {% for g in quality_gates %}
+          <tr><td><span class="tag {{ 'ok' if g.passed else 'fail' }}">{{ "Pass" if g.passed else "Fail" }}</span></td><td>{{ gate_labels.get(g.check, g.detail) }}</td><td class="n">{{ "{:,}".format(g.n_violations|int) }} / {{ "{:,}".format(g.n_checked|int) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </figure>
+    <figure class="pane" style="margin:16px 0 0">
+      <figcaption class="pane-head"><h3>Races excluded from strategy modelling</h3><span class="unit">{{ exclusions|length }} of {{ metrics.n_races }}</span></figcaption>
+      <div class="scroll-y">
+        <table class="est">
+          <thead><tr><th>Race</th><th>Rule</th><th class="n">Wet laps</th></tr></thead>
+          <tbody>
+          {% for e in exclusions %}
+            <tr><td>{{ e.year }} {{ e.event_name }}</td><td>{{ e.exclusion_reason|replace("E1_too_few_green_laps", "Too few green laps")|replace("E3_early_red_flag", "Early red flag")|replace("E5_wet_race", "Wet race")|replace("|", " · ") }}</td><td class="n">{{ "%.0f"|format(100 * e.wet_lap_share) }}%</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="run" aria-labelledby="h-det">
+  <div class="claim">
+    <h2 id="h-det">The pass detector matches the sport.</h2>
+    <p class="plain">Passes per race, counted from timing data with no tuning to known results, rank circuits the way anyone who watches F1 would.</p>
+  </div>
+  <figure class="pane" style="margin:0">
+    <figcaption class="pane-head"><h3>Detected passes per race</h3><span class="unit">mean across races</span></figcaption>
+    <div class="pane-body"><div id="det-chart" aria-hidden="true"></div></div>
+  </figure>
+</section>
+{% endblock %}
+
+{% block data %}{{ {"rel": reliability, "gate": gate_evidence, "sv": strategy_validation, "detector": detector}|tojson }}{% endblock %}

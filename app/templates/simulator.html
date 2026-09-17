@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Simulator · Pit Wall{% endblock %}
+{% block description %}Run an F1 race 600 times: drag the pit stops along a lap strip and see the distribution of where the car finishes.{% endblock %}
+
+{% block content %}
+<section class="run page-head" aria-labelledby="h-sim">
+  <div class="claim">
+    <h1 id="h-sim">Run a race, 600 times.</h1>
+    <p class="plain">Pick a circuit, drag the stops along the lap strip, and simulate. Every run includes tyre wear, fuel burn, pit loss, random safety cars, and cars that can't simply drive past each other.</p>
+  </div>
+  <div class="claim">
+    <p class="aside">A demonstration of the mechanics, not strategy advice. <a href="/validation#why">Validation V6</a> shows this simulator over-prices extra stops and uneven stints compared with real races, so read its preferences with that in mind.</p>
+  </div>
+</section>
+
+<section class="run wide" aria-label="Simulator">
+  <div class="pane">
+    <div class="controls">
+      <div class="field">
+        <label for="sim-circuit">Circuit</label>
+        <select id="sim-circuit">
+          {% for c in circuits|sort(attribute='name') %}<option value="{{ c.key }}"{% if c.key == 'monza' %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="sim-grid">Start position</label>
+        <input type="number" id="sim-grid" value="5" min="1" max="12" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="sim-start">Starting tyre</label>
+        <select id="sim-start">
+          <option value="0">Softest</option>
+          <option value="1" selected>Middle</option>
+          <option value="2">Hardest</option>
+        </select>
+      </div>
+      <div class="go">
+        <button class="btn line" id="sim-best" type="button">Load the optimiser's plan</button>
+        <button class="btn" id="sim-run" type="button">Simulate 600 races</button>
+      </div>
+    </div>
+
+    <dl class="readout" id="circ-facts" aria-live="polite">
+      <div><dt>Race laps</dt><dd id="f-laps">–</dd></div>
+      <div><dt>Pit loss</dt><dd id="f-pit">–</dd></div>
+      <div><dt>Wear S · M · H (s/lap)</dt><dd id="f-wear">–</dd></div>
+      <div><dt>Cautions / race</dt><dd id="f-sc">–</dd></div>
+    </dl>
+
+    <div class="stint-wrap">
+      <p class="stint-help" id="stint-help">Drag a stop to move it · click the strip to add one · focus a stop and use the arrow keys to nudge it or Delete to remove it.</p>
+      <div class="stint" id="stint" aria-describedby="stint-help"></div>
+    </div>
+    <div class="stints-list" id="stints-list"></div>
+
+    <div class="results" id="sim-results" hidden>
+      <dl class="readout">
+        <div><dt>Mean finish</dt><dd id="r-mean">–</dd></div>
+        <div><dt>90% of races</dt><dd id="r-range">–</dd></div>
+        <div><dt>Win · podium</dt><dd id="r-win">–</dd></div>
+        <div><dt>Gap to winner</dt><dd id="r-gap">–</dd></div>
+      </dl>
+      <div class="pane-body"><div id="sim-chart" aria-hidden="true"></div></div>
+    </div>
+    <p class="empty" id="sim-empty">Set a strategy, then simulate. The distribution of finishing positions appears here.</p>
+    <p class="err" id="sim-err" role="alert" hidden></p>
+  </div>
+</section>
+{% endblock %}

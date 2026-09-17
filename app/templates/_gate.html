@@ -1,0 +1,39 @@
+{% if gate %}
+<figure class="pane" style="margin:0">
+  <div class="verdict {{ 'pass' if gate.passed else 'fail' }}">
+    <span class="lamp" aria-hidden="true"></span>
+    <span><b>{{ "PASSED" if gate.passed else "FAILED" }}</b> · pre-registered sanity gate</span>
+  </div>
+  <figcaption class="pane-head">
+    <h3>Claimed gain over real strategy</h3>
+    <span class="unit">car-races per 5 s bin</span>
+  </figcaption>
+  <div class="pane-body"><div id="gate-chart" aria-hidden="true"></div></div>
+  <dl class="readout">
+    <div><dt>Mean gain</dt><dd class="{{ 'bad' if gate.mean_gain_s > gate.thresholds.max_mean_gain_s }}">{{ "%.2f"|format(gate.mean_gain_s) }} s</dd></div>
+    <div><dt>Limit</dt><dd>{{ "%.1f"|format(gate.thresholds.max_mean_gain_s) }} s</dd></div>
+    <div><dt>Beats teams</dt><dd class="{{ 'bad' if gate.share_improved > gate.thresholds.max_share_improved }}">{{ "%.0f"|format(gate.share_improved * 100) }}% <span class="dim">/ {{ "%.0f"|format(gate.thresholds.max_share_improved * 100) }}%</span></dd></div>
+    <div><dt>Largest</dt><dd class="{{ 'bad' if gate.max_gain_s > gate.thresholds.max_single_gain_s }}">{{ "%.0f"|format(gate.max_gain_s) }} s <span class="dim">/ {{ "%.0f"|format(gate.thresholds.max_single_gain_s) }}</span></dd></div>
+  </dl>
+</figure>
+{% if gate_evidence %}
+<figure class="pane" style="margin:16px 0 0">
+  <figcaption class="pane-head">
+    <h3>Mean claimed gain by extra stops the team made</h3>
+    <span class="unit">amber line = 2.0 s limit</span>
+  </figcaption>
+  <ul class="rows">
+    {% set maxv = gate_evidence.by_extra_stops|map(attribute='mean')|max %}
+    {% for r in gate_evidence.by_extra_stops %}
+    <li>
+      <span>{% if r.extra == 0 %}Same count{% elif r.extra == 3 %}+3 or more{% else %}+{{ r.extra }} stop{{ 's' if r.extra > 1 }}{% endif %} <span class="dim num">· {{ r.n }}</span></span>
+      <span class="bar" aria-hidden="true"><i style="width:{{ (100 * r.mean / maxv)|round(1) }}%"></i><s style="left:{{ (100 * 2.0 / maxv)|round(2) }}%"></s></span>
+      <span class="v">{{ "%.1f"|format(r.mean) }} s</span>
+    </li>
+    {% endfor %}
+  </ul>
+</figure>
+{% endif %}
+{% else %}
+<div class="pane"><p class="empty">The strategy audit has not been run for this build.</p></div>
+{% endif %}

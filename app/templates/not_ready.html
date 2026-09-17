@@ -1,12 +1,18 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pit Wall — not built yet</title>
-<link rel="stylesheet" href="/static/pitwall.css"></head>
-<body><div class="wrap"><header class="masthead">
-<div class="eyebrow">Pit Wall</div>
-<h1>Model artefacts not built.</h1>
-<p class="standfirst">The app reads fitted artefacts from <code>models_out/</code>. Build them with:</p>
-<pre style="background:var(--surface);border:1px solid var(--hairline);border-radius:8px;padding:16px;overflow:auto"><code>python -m pitwall.ingest
-python -m pitwall.pipeline</code></pre>
-</header></div></body></html>
+<title>Pit Wall · warming up</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/pitwall.css?v={{ asset_version }}">
+</head>
+<body>
+<main style="min-height:100vh;display:grid;place-items:center;padding:24px">
+  <div class="pane" style="max-width:560px;padding:28px">
+    <h1 style="font-size:32px">Model outputs aren't built yet.</h1>
+    <p style="color:var(--ink-2);margin-top:14px">This server starts without the fitted models. Run <code class="mono">python -m pitwall.pipeline</code>, then <code class="mono">python -m scripts.run_audit</code> and <code class="mono">python -m scripts.validate_strategy</code>, and restart.</p>
+  </div>
+</main>
+</body>
+</html>

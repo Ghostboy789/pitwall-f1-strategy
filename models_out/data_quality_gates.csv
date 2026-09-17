@@ -1,0 +1,9 @@
+check,n_violations,n_checked,share,passed,detail
+non_empty,0,1,0.0,True,lap table has rows
+lap_number_monotonic,0,203644,0.0,True,LapNumber increases within car_id
+stint_non_decreasing,0,203644,0.0,True,Stint never decreases within car_id
+tyre_age_increments,0,192153,0.0,True,TyreLife advances by 1 within a stint
+fresh_tyre_starts_at_age_1,26,7666,0.0033915992695016956,True,a new set starts at TyreLife 1 (tolerance 77)
+lap_time_in_bounds,0,197422,0.0,True,50.0-400.0s
+circuit_keys_known,0,32,0.0,True,[]
+no_duplicate_car_laps,0,203644,0.0,True,one row per car per lap
